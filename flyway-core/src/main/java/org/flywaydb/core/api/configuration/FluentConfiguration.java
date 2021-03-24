@@ -304,6 +304,9 @@ public class FluentConfiguration implements Configuration {
     public String getOracleKerberosCacheFile() { return config.getOracleKerberosCacheFile(); }
 
     @Override
+    public String getDb2zDatabaseName() { return config.getDb2zDatabaseName(); }
+
+    @Override
     public String getLicenseKey() {
         return config.getLicenseKey();
     }
@@ -1129,6 +1132,16 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration oracleKerberosCacheFile(String oracleKerberosCacheFile) {
         config.setOracleKerberosCacheFile(oracleKerberosCacheFile);
+        return this;
+    }
+
+    /**
+     * The database name for DB2 on z/OS (required for DB2 on z/OS)
+     *
+     * @param db2zDatabaseName The DB2 on z/OS database name.
+     */
+    public FluentConfiguration db2zDatabaseName(String db2zDatabaseName) {
+        config.setDb2zDatabaseName(db2zDatabaseName);
         return this;
     }
 

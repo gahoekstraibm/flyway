@@ -22,6 +22,7 @@ import org.flywaydb.core.internal.database.base.DatabaseType;
 import org.flywaydb.core.internal.database.base.TestContainersDatabaseType;
 import org.flywaydb.core.internal.database.cockroachdb.CockroachDBDatabaseType;
 import org.flywaydb.core.internal.database.db2.DB2DatabaseType;
+import org.flywaydb.core.internal.database.db2z.DB2ZDatabaseType;
 import org.flywaydb.core.internal.database.derby.DerbyDatabaseType;
 
 
@@ -77,6 +78,7 @@ public class DatabaseTypeRegister {
             registeredDatabaseTypes.add(new MariaDBDatabaseType());
 
             registeredDatabaseTypes.add(new DB2DatabaseType());
+            registeredDatabaseTypes.add(new DB2ZDatabaseType());
             registeredDatabaseTypes.add(new DerbyDatabaseType());
             registeredDatabaseTypes.add(new FirebirdDatabaseType());
             registeredDatabaseTypes.add(new H2DatabaseType());

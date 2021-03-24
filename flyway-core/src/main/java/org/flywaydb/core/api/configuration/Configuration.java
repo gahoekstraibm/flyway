@@ -524,6 +524,8 @@ public interface Configuration {
     String getOracleKerberosConfigFile();
 
     String getOracleKerberosCacheFile();
+	
+	String getDb2zDatabaseName();
 
     /**
      * Your Flyway license key (FL01...). Not yet a Flyway Teams Edition customer?

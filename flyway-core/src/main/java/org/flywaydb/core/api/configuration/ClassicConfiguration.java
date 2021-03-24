@@ -495,6 +495,11 @@ public class ClassicConfiguration implements Configuration {
     private String oracleKerberosCacheFile = "";
 
     /**
+     * The database name for DB2 on z/OS (required for DB2 on z/OS)
+     */
+    private String db2zDatabaseName = "";
+
+    /**
      * The REST API URL of your Vault server, including the API version.
      * Currently only supports API version v1.
      * Example: http://localhost:8200/v1/
@@ -859,6 +864,11 @@ public class ClassicConfiguration implements Configuration {
     @Override
     public String getOracleKerberosCacheFile(){
         return oracleKerberosCacheFile;
+    }
+
+    @Override
+    public String getDb2zDatabaseName(){
+        return db2zDatabaseName;
     }
 
     /**
@@ -1759,6 +1769,14 @@ public class ClassicConfiguration implements Configuration {
     }
 
     /**
+     * The database name for DB2 on z/OS (required for DB2 on z/OS)
+     */
+    public void setDb2zDatabaseName(String db2zDatabaseName) {
+
+        this.db2zDatabaseName = db2zDatabaseName;
+    }
+
+    /**
      * Whether Flyway should attempt to create the schemas specified in the schemas property.
      *
      * @param createSchemas @{code true} to attempt to create the schemas (default: {@code true})
@@ -1920,6 +1938,7 @@ public class ClassicConfiguration implements Configuration {
         setJavaMigrationClassProvider(configuration.getJavaMigrationClassProvider());
         setShouldCreateSchemas(configuration.getCreateSchemas());
         setLockRetryCount(configuration.getLockRetryCount());
+		setDb2zDatabaseName(configuration.getDb2zDatabaseName());
 
         url = configuration.getUrl();
         user = configuration.getUser();
@@ -2166,6 +2185,11 @@ public class ClassicConfiguration implements Configuration {
         Boolean oracleSqlplusWarnProp = removeBoolean(props, ConfigUtils.ORACLE_SQLPLUS_WARN);
         if (oracleSqlplusWarnProp != null) {
             setOracleSqlplusWarn(oracleSqlplusWarnProp);
+        }
+
+        String db2zDatabaseNameProp = props.remove(ConfigUtils.DB2Z_DATABASE_NAME);
+        if (db2zDatabaseNameProp != null) {
+            setDb2zDatabaseName(db2zDatabaseNameProp);
         }
 
         Boolean createSchemasProp = removeBoolean(props, ConfigUtils.CREATE_SCHEMAS);
