@@ -127,7 +127,7 @@ public class DB2ZDatabase extends Database<DB2ZConnection> {
 
     @Override
     public boolean useSingleConnection() {
-        return false;
+        return true;
     }
 
 }
