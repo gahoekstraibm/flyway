@@ -88,8 +88,14 @@ public class DB2ZSchema extends Schema<DB2ZDatabase, DB2ZTable> {
             }
 
         // views
-        for (String dropStatement : generateDropStatements("V", "VIEW")) {
-            jdbcTemplate.execute(dropStatement);
+        /* We need to query for all views in schema after each DROP because of a
+         * specific property in z/OS to DROP dependent nested views (views depending on other views).
+         */
+        List<String> dropStatements = generateDropStatements("V", "VIEW");
+        while(dropStatements.size() != 0) {
+           	String dropStatement = dropStatements.get(0);
+           	jdbcTemplate.execute(dropStatement);
+         	dropStatements = generateDropStatements("V", "VIEW");
         }
 
         // aliases
