@@ -60,7 +60,11 @@ public class DB2ZDatabase extends Database<DB2ZConnection> {
 
     @Override
     public String getRawCreateScript(Table table, boolean baseline) {
-		final String tableSpaceName = "SFLYWAY";
+		String tableSpaceName = "SFLYWAY";
+		String configurationTablespaceName = configuration.getTablespace();
+		if(configurationTablespaceName != null) {
+			tableSpaceName = configurationTablespaceName;
+		}
 
         return "SET CURRENT SQLID = '" + table.getSchema().getName() + "';\n" +
 		        "CREATE TABLESPACE " + tableSpaceName + " IN \"" + name + "\" MAXPARTITIONS 1 LOCKSIZE ROW CLOSE YES COMPRESS YES;\n" +
