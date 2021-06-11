@@ -113,7 +113,11 @@ public class DB2ZSchema extends Schema<DB2ZDatabase, DB2ZTable> {
         }
 
         // explicit tablespace
-        for (String dropStatement : generateDropStatementsForTablespace()) {
+        for (String dropStatement : generateDropStatementsForRegularTablespace()) {
+            jdbcTemplate.execute(dropStatement);
+        }
+        
+        for (String dropStatement : generateDropStatementsForLobTablespace()) {
             jdbcTemplate.execute(dropStatement);
         }
 
@@ -171,10 +175,21 @@ public class DB2ZSchema extends Schema<DB2ZDatabase, DB2ZTable> {
      * @return The drop statements.
      * @throws java.sql.SQLException when the statements could not be generated.
      */
-    private List<String> generateDropStatementsForTablespace() throws SQLException {
+    private List<String> generateDropStatementsForRegularTablespace() throws SQLException {
 		//Only drop explicitly created tablespaces for current database and created under this specific schema authorization ID
 		//Note that this also drops the related table for partitioned tablespaces.
-        String dropTablespaceGenQuery = "select rtrim(NAME) FROM SYSIBM.SYSTABLESPACE where IMPLICIT = 'N' AND DBNAME = '" + database.getName() + "' AND CREATOR = '" + name + "'";
+        String dropTablespaceGenQuery = "select rtrim(NAME) FROM SYSIBM.SYSTABLESPACE where IMPLICIT = 'N' AND DBNAME = '" + database.getName() + "' AND CREATOR = '" + name + "' AND TYPE <> 'O'";
+
+        List<String> dropStatements = new ArrayList<>();
+        List<String> dbObjects = jdbcTemplate.queryForStringList(dropTablespaceGenQuery);
+        for (String dbObject : dbObjects) {
+            dropStatements.add("DROP TABLESPACE " + database.quote(database.getName(), dbObject));
+        }
+        return dropStatements;
+    }
+    
+    private List<String> generateDropStatementsForLobTablespace() throws SQLException {
+    	String dropTablespaceGenQuery = "select rtrim(NAME) FROM SYSIBM.SYSTABLESPACE where IMPLICIT = 'N' AND DBNAME = '" + database.getName() + "' AND CREATOR = '" + name + "' AND TYPE = 'O'";
 
         List<String> dropStatements = new ArrayList<>();
         List<String> dbObjects = jdbcTemplate.queryForStringList(dropTablespaceGenQuery);
