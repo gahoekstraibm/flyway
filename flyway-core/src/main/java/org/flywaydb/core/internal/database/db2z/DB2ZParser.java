@@ -17,10 +17,14 @@ package org.flywaydb.core.internal.database.db2z;
 
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.internal.parser.*;
+import org.flywaydb.core.internal.sqlscript.Delimiter;
+import org.flywaydb.core.internal.sqlscript.ParsedSqlStatement;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DB2ZParser extends Parser {
@@ -39,6 +43,72 @@ public class DB2ZParser extends Parser {
             ".*CREATE\\s([^\\s]+\\s){0,2}IF\\sNOT\\sEXISTS");
     private static final Pattern DROP_IF_EXISTS = Pattern.compile(
             ".*DROP\\s([^\\s]+\\s){0,2}IF\\sEXISTS");
+    private static final Pattern STORED_PROCEDURE_CALL = Pattern.compile(
+            "^CALL");
+	private static final StatementType DB2Z_CALL_STATEMENT = new StatementType();
+    private static final Pattern DB2Z_CALL_WITH_PARMS_REXEX = Pattern.compile(
+            "^CALL\\s+(?<procname>([^\\s]+\\.)?[^\\s]+)(\\((?<args>\\S.*)\\))");
+//    private static final Pattern DB2Z_CALL_ARGS_REGEX = Pattern.compile(
+//            "('.*')|(-?[\\d]+(\\.[\\d]+)?)|NO|YES");
+//    private static final Pattern DB2Z_CALL_ARG_REGEX = Pattern.compile(
+//            "(('.*')|(-?[\\d]+(\\.[\\d]+)?)|NO|YES|NULL)(\\s*,\\s*('.*')|(-?[\\d]+(\\.[\\d]+)?)|NO|YES|NULL)*");
+	//Split on comma if that comma has zero, or an even number of quotes ahead
+	private static final Pattern PARMS_SPLIT_REGEX = Pattern.compile(",(?=(?:[^']*'[^']*')*[^']*$)");
+	private static final Pattern STRING_PARM_REGEX = Pattern.compile("'.*'");
+	private static final Pattern INTEGER_PARM_REGEX = Pattern.compile("-?\\d+");
+
+    @Override
+    protected StatementType detectStatementType(String simplifiedStatement, ParserContext context) {
+	    if (STORED_PROCEDURE_CALL.matcher(simplifiedStatement).matches()) {
+            LOG.debug("detectStatementType: DB2Z CALL statement found" );
+            return DB2Z_CALL_STATEMENT;
+        }
+        return super.detectStatementType(simplifiedStatement, context);
+    }
+
+    @Override
+    protected ParsedSqlStatement createStatement(PeekingReader reader, Recorder recorder,
+                                                 int statementPos, int statementLine, int statementCol,
+                                                 int nonCommentPartPos, int nonCommentPartLine, int nonCommentPartCol,
+                                                 StatementType statementType, boolean canExecuteInTransaction,
+                                                 Delimiter delimiter, String sql
+
+
+
+    ) throws IOException {
+        if (statementType == DB2Z_CALL_STATEMENT) {
+			Matcher callMatcher = DB2Z_CALL_WITH_PARMS_REXEX.matcher(sql);
+			
+			if(callMatcher.matches()) {
+				String procName = callMatcher.group("procname");
+				String parmsString = callMatcher.group("args");
+	            LOG.debug("createStatement: DB2Z CALL " + procName );
+				String[] parmStrings = PARMS_SPLIT_REGEX.split(parmsString);
+				Object[] parms = new Object[parmStrings.length];
+				for(int i = 0; i < parmStrings.length; i++) {
+		            String prmTrimmed = parmStrings[i].trim().toUpperCase();
+					LOG.debug("createStatement: DB2Z CALL parm: " + prmTrimmed );
+				    if (STRING_PARM_REGEX.matcher(prmTrimmed).matches()) {
+						//For string literals, remove the surrounding single quotes and 
+						//de-escape any single quotes inside the string
+						parms[i] = prmTrimmed.substring(1, prmTrimmed.length() - 1).replace("''", "'");
+					} else if (INTEGER_PARM_REGEX.matcher(prmTrimmed).matches()) {
+						parms[i] = new Integer(prmTrimmed);
+					} else if (prmTrimmed.equals("NULL")) {
+						parms[i] = null;						
+					} else {
+						parms[i] = prmTrimmed;												
+					}
+				}
+	            return new DB2ZCallProcedureParsedStatement(statementPos, statementLine, statementCol,
+    	            sql, delimiter, canExecuteInTransaction, procName, parms);
+			}
+        }
+        return super.createStatement(reader, recorder, statementPos, statementLine, statementCol,
+                nonCommentPartPos, nonCommentPartLine, nonCommentPartCol,
+                statementType, canExecuteInTransaction, delimiter, sql
+        );
+    }
 
     @Override
     protected void adjustBlockDepth(ParserContext context, List<Token> tokens, Token keyword, PeekingReader reader) throws IOException {

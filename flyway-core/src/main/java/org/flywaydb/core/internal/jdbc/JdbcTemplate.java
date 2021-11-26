@@ -220,9 +220,33 @@ public class JdbcTemplate {
         try {
             statement = prepareStatement(sql, params);
             statement.execute();
+         } finally {
+            JdbcUtils.closeStatement(statement);
+        }
+    }
+
+    /**
+     * Executes this callable sql statement using a PreparedStatement.
+     *
+     * @param sql    The statement to execute.
+     * @param params The statement parameters.
+     * @return the results of the execution.
+     */
+
+    public Results executeCallableStatement(String sql, Object... params) {
+        Results results = new Results();
+        PreparedStatement statement = null;
+        try {
+            statement = prepareStatement(sql, params);
+            boolean hasResults = statement.execute();
+            extractResults(results, statement, sql, hasResults);
+            extractWarnings(results, statement);
+        } catch (final SQLException e) {
+            extractErrors(results, e);
         } finally {
             JdbcUtils.closeStatement(statement);
         }
+        return results;
     }
 
     /**
