@@ -47,7 +47,7 @@ public class DB2ZParser extends Parser {
             "^CALL");
 	private static final StatementType DB2Z_CALL_STATEMENT = new StatementType();
     private static final Pattern DB2Z_CALL_WITH_PARMS_REXEX = Pattern.compile(
-            "^CALL\\s+(?<procname>([^\\s]+\\.)?[^\\s]+)(\\((?<args>\\S.*)\\))");
+            "^CALL\\s+(?<procname>([^\\s]+\\.)?[^\\s]+)(\\((?<args>\\S.*)\\))", Pattern.CASE_INSENSITIVE);
 
 	//Split on comma if that comma has zero, or an even number of quotes ahead
 	private static final Pattern PARMS_SPLIT_REGEX = Pattern.compile(",(?=(?:[^']*'[^']*')*[^']*$)");
@@ -56,6 +56,7 @@ public class DB2ZParser extends Parser {
 
     @Override
     protected StatementType detectStatementType(String simplifiedStatement, ParserContext context) {
+        LOG.debug("detectStatementType: simplifiedStatement=" + simplifiedStatement);
 	    if (STORED_PROCEDURE_CALL.matcher(simplifiedStatement).matches()) {
             LOG.debug("detectStatementType: DB2Z CALL statement found" );
             return DB2Z_CALL_STATEMENT;
@@ -83,7 +84,7 @@ public class DB2ZParser extends Parser {
 				String[] parmStrings = PARMS_SPLIT_REGEX.split(parmsString);
 				Object[] parms = new Object[parmStrings.length];
 				for(int i = 0; i < parmStrings.length; i++) {
-		            String prmTrimmed = parmStrings[i].trim().toUpperCase();
+		            String prmTrimmed = parmStrings[i].trim();
 					LOG.debug("createStatement: DB2Z CALL parm: " + prmTrimmed );
 				    if (STRING_PARM_REGEX.matcher(prmTrimmed).matches()) {
 						//For string literals, remove the surrounding single quotes and 
@@ -91,7 +92,7 @@ public class DB2ZParser extends Parser {
 						parms[i] = prmTrimmed.substring(1, prmTrimmed.length() - 1).replace("''", "'");
 					} else if (INTEGER_PARM_REGEX.matcher(prmTrimmed).matches()) {
 						parms[i] = new Integer(prmTrimmed);
-					} else if (prmTrimmed.equals("NULL")) {
+					} else if (prmTrimmed.toUpperCase().equals("NULL")) {
 						parms[i] = null;						
 					} else {
 						parms[i] = prmTrimmed;												
