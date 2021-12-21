@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 
 /**
@@ -40,6 +41,9 @@ public class DB2ZCallProcedureParsedStatement extends ParsedSqlStatement {
 
     private final String procedureName;
     private final Object[] parms;
+
+    private static final Pattern DB2Z_DSNUTILU_PROCNAME = Pattern.compile(
+            "\"?SYSPROC\"?\\.\"?DSNUTILU\"?", Pattern.CASE_INSENSITIVE);
     /**
      * Creates a new DB2Z CALL PROCEDURE statement.
      */
@@ -52,13 +56,43 @@ public class DB2ZCallProcedureParsedStatement extends ParsedSqlStatement {
 
     @Override
     public Results execute(JdbcTemplate jdbcTemplate) {
-        Results results = new Results();
+        Results results;
 		String callStmt = "CALL " + procedureName + "(";
 		for(int i=0; i < parms.length; i++) {
 			callStmt += (i > 0 ? ", ?" : "?");
 		}
 		callStmt += ")";
 
-		return jdbcTemplate.executeCallableStatement(callStmt, parms);
+		results = jdbcTemplate.executeCallableStatement(callStmt, parms);
+		
+		//For SYSPROC.DSNUTILU invocations, check last result row to detect any error
+		if(DB2Z_DSNUTILU_PROCNAME.matcher(procedureName).matches()) {
+			List<Result> resultList = results.getResults();
+			if(resultList.size() > 0) {
+				Result result = resultList.get(0);
+				if(result != null) {
+					List<List<String>> resultData = result.getData(); 
+					if(resultData != null && resultData.size() > 0) {
+						List<String> lastResultRow = resultData.get(resultData.size()-1);
+						if(lastResultRow != null && lastResultRow.size() > 0 ) {
+							String lastMessage = lastResultRow.get(lastResultRow.size()-1);
+							if(lastMessage != null && lastMessage.contains("DSNUGBAC - UTILITY EXECUTION TERMINATED, HIGHEST RETURN CODE=")) {
+								String message = "DSNUTILU TERMINATED WITH OUTPUT:\n";
+								for(List<String> row : resultData) {
+									message += row.get(row.size()-1) + "\n";
+								}
+								results.setException(new SQLException(message));
+							} else {
+								//In case of successful completion, only log last message
+								resultData.clear();
+								resultData.add(lastResultRow);
+							}
+						}
+					}
+				}				
+			}
+		}
+		
+		return results;
     }
 }
