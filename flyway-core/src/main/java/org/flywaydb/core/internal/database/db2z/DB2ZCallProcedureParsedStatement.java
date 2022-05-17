@@ -76,7 +76,9 @@ public class DB2ZCallProcedureParsedStatement extends ParsedSqlStatement {
 						List<String> lastResultRow = resultData.get(resultData.size()-1);
 						if(lastResultRow != null && lastResultRow.size() > 0 ) {
 							String lastMessage = lastResultRow.get(lastResultRow.size()-1);
-							if(lastMessage != null && lastMessage.contains("DSNUGBAC - UTILITY EXECUTION TERMINATED, HIGHEST RETURN CODE=")) {
+							if(lastMessage != null && (
+								lastMessage.contains("DSNUGBAC - UTILITY EXECUTION TERMINATED, HIGHEST RETURN CODE=") ||
+								lastMessage.contains("DSNUGBAC - UTILITY BATCH MEMORY EXECUTION ABENDED"))) {
 								String message = "DSNUTILU TERMINATED WITH OUTPUT:\n";
 								for(List<String> row : resultData) {
 									message += row.get(row.size()-1) + "\n";
