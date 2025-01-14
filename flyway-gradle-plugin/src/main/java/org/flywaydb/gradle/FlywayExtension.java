@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-gradle-plugin
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.gradle;
 
@@ -19,7 +23,7 @@ import java.util.Map;
 
 /**
  * Flyway's configuration properties.
- * More info: <a href="https://flywaydb.org/documentation/gradle">https://flywaydb.org/documentation/gradle</a>
+ * More info: <a href="https://documentation.red-gate.com/fd/gradle-task-184127407.html">https://documentation.red-gate.com/fd/gradle-task-184127407.html</a>
  */
 public class FlywayExtension {
     /**
@@ -279,7 +283,7 @@ public class FlywayExtension {
      * <ul>
      *     <li>auto: Auto detect the logger (default behavior)</li>
      *     <li>console: Use stdout/stderr (only available when using the CLI)</li>
-     *     <li>slf4j2: Use the slf4j2 logger</li>
+     *     <li>slf4j: Use the slf4j logger</li>
      *     <li>log4j2: Use the log4j2 logger</li>
      *     <li>apache-commons: Use the Apache Commons logger</li>
      * </ul>
@@ -326,6 +330,7 @@ public class FlywayExtension {
     public Boolean validateOnMigrate;
 
     /**
+     * Deprecated, will be removed in a future release. <br>
      * Whether to automatically call clean or not when a validation error occurs. (default: {@code false})<br>
      * This is exclusively intended as a convenience for development. even though we
      * strongly recommend not to change migration scripts once they have been checked into SCM and run, this provides a
@@ -339,10 +344,9 @@ public class FlywayExtension {
     /**
      * Ignore migrations that match this comma-separated list of patterns when validating migrations.
      * Each pattern is of the form <migration_type>:<migration_state>
-     * See https://flywaydb.org/documentation/configuration/parameters/ignoreMigrationPatterns for full details
+     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
      * Example: repeatable:missing,versioned:pending,*:failed
      * (default: *:future)
-     * <i>Flyway Teams only</i>
      */
     public String[] ignoreMigrationPatterns;
 

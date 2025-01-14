@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.schemahistory;
 
@@ -74,9 +78,7 @@ public abstract class SchemaHistory {
     public final boolean hasNonSyntheticAppliedMigrations() {
         for (AppliedMigration appliedMigration : allAppliedMigrations()) {
             if (!appliedMigration.getType().isSynthetic()
-
-
-
+                    && !appliedMigration.getType().isUndo()
             ) {
                 return true;
             }
@@ -138,8 +140,8 @@ public abstract class SchemaHistory {
      * @return {@code true} if it does, {@code false} if it doesn't.
      */
     public final boolean hasSchemasMarker() {
-        List<AppliedMigration> appliedMigrations = allAppliedMigrations();
-        return !appliedMigrations.isEmpty() && appliedMigrations.get(0).getType() == CoreMigrationType.SCHEMA;
+        final List<AppliedMigration> appliedMigrations = allAppliedMigrations();
+        return !appliedMigrations.isEmpty() && appliedMigrations.stream().anyMatch(x -> x.getType() == CoreMigrationType.SCHEMA);
     }
 
     public List<String> getSchemasCreatedByFlyway() {
@@ -147,8 +149,10 @@ public abstract class SchemaHistory {
             return new ArrayList<>();
         }
 
-        return allAppliedMigrations().get(0).getScript()
-                .split(",").stream()
+        return allAppliedMigrations().stream()
+                .filter(x -> x.getType() == CoreMigrationType.SCHEMA)
+                .map(AppliedMigration::getScript)
+                .flatMap(script -> Arrays.stream(script.split(",")))
                 .map(result -> table.getDatabase().unQuote(result))
                 .collect(Collectors.toList());
     }

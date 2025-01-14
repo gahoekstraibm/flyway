@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.database;
 
@@ -30,30 +34,31 @@ import org.flywaydb.core.internal.sqlscript.SqlScriptFactory;
 
 import java.sql.Connection;
 import java.sql.Driver;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-public interface DatabaseType extends Plugin, Comparable<DatabaseType> {
+public interface DatabaseType extends Plugin {
     /**
      * @return The human-readable name for this database type.
      */
     String getName();
+
+    List<String> getSupportedEngines();
 
     /**
      * @return The JDBC type used to represent {@code null} in prepared statements.
      */
     int getNullType();
 
-
-
-
-
-
-
-
-
-
+    /**
+     * Checks whether read-only transactions are supported by this database.
+     *
+     * @return {@code true} if read-only transactions are supported, {@code false} if not.
+     */
+    boolean supportsReadOnlyTransactions();
 
     /**
      * Check if this database type should handle the given JDBC url
@@ -64,23 +69,20 @@ public interface DatabaseType extends Plugin, Comparable<DatabaseType> {
     boolean handlesJDBCUrl(String url);
 
     /**
-     * When identifying database types, the priority with which this type will be used. High numbers indicate
-     * that this type will be used in preference to others.
-     */
-    int getPriority();
-
-    /**
-     * When identifying database types, this method will sort by priority.
-     */
-    int compareTo(DatabaseType other);
-
-    /**
      * A regex that identifies credentials in the JDBC URL, where they conform to a pattern specific to this database.
      * The first captured group should represent the password text, so that it can be redacted if necessary.
      *
      * @return The URL regex.
      */
     Pattern getJDBCCredentialsPattern();
+
+    /**
+     * A list of regex patterns that identifies credentials in the JDBC URL, where they conform to a pattern specific to this database.
+     * The first captured group should represent the password text, so that it can be redacted if necessary.
+     *
+     * @return a list of URL regexes.
+     */
+    List<Pattern> getJDBCCredentialsPatterns();
 
     /**
      * Get the driver class used to handle this JDBC url.
@@ -113,19 +115,6 @@ public interface DatabaseType extends Plugin, Comparable<DatabaseType> {
      */
     boolean handlesDatabaseProductNameAndVersion(String databaseProductName, String databaseProductVersion, Connection connection);
 
-    /**
-     * Initializes the Database class, and optionally prints some information.
-     *
-     * @param configuration The Flyway configuration.
-     * @param jdbcConnectionFactory The current connection factory.
-     * @param printInfo Where the DB info should be printed in the logs.
-     * @return The appropriate Database class.
-     */
-    Database createDatabase(
-            Configuration configuration, boolean printInfo,
-            JdbcConnectionFactory jdbcConnectionFactory,
-            StatementInterceptor statementInterceptor
-                           );
 
     /**
      * Initializes the Database used by this Database Type.
@@ -265,5 +254,7 @@ public interface DatabaseType extends Plugin, Comparable<DatabaseType> {
 
     String instantiateClassExtendedErrorMessage();
 
-    void printMessages();
+    default List<String> getSpecialResourceFilenames(Configuration configuration) {
+        return Collections.emptyList();
+    }
 }

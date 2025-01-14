@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.api.pattern;
 
@@ -19,7 +23,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.MigrationState;
-import org.flywaydb.core.internal.license.FlywayTeamsUpgradeRequiredException;
+import org.flywaydb.core.internal.license.FlywayRedgateEditionRequiredException;
 import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 
 import java.util.Arrays;
@@ -33,10 +37,11 @@ public class ValidatePattern {
     private static final List<String> validMigrationTypes = Arrays.asList("*", "repeatable", "versioned");
     private static final List<String> validMigrationStates = Arrays.asList(
             "*",
-            MigrationState.MISSING_SUCCESS.getDisplayName().toLowerCase(),
-            MigrationState.PENDING.getDisplayName().toLowerCase(),
-            MigrationState.IGNORED.getDisplayName().toLowerCase(),
-            MigrationState.FUTURE_SUCCESS.getDisplayName().toLowerCase());
+            MigrationState.MISSING_SUCCESS.getPattern(),
+            MigrationState.PENDING.getPattern(),
+            MigrationState.IGNORED.getPattern(),
+            MigrationState.FUTURE_SUCCESS.getPattern());
+    private final String pattern;
 
     public static ValidatePattern fromPattern(String pattern) {
         if (pattern == null) {
@@ -54,12 +59,6 @@ public class ValidatePattern {
         String migrationType = patternParts[0].trim().toLowerCase();
         String migrationState = patternParts[1].trim().toLowerCase();
 
-
-        if (migrationType.equals("repeatable") || migrationType.equals("versioned")) {
-            throw new FlywayTeamsUpgradeRequiredException("ignoreMigrationPattern with type '" + migrationType + "'");
-        }
-
-
         if (!validMigrationTypes.contains(migrationType)) {
             throw new FlywayException("Invalid migration type '" + patternParts[0] + "'. Valid types are: " + validMigrationTypes);
         }
@@ -68,7 +67,7 @@ public class ValidatePattern {
             throw new FlywayException("Invalid migration state '" + patternParts[1] + "'. Valid states are: " + validMigrationStates);
         }
 
-        return new ValidatePattern(migrationType, migrationState);
+        return new ValidatePattern(migrationType, migrationState, pattern);
     }
 
     public boolean matchesMigration(boolean isVersioned, MigrationState state) {
@@ -104,5 +103,10 @@ public class ValidatePattern {
     @Override
     public int hashCode() {
         return Objects.hash(migrationType, migrationState);
+    }
+
+    @Override
+    public String toString() {
+        return pattern;
     }
 }

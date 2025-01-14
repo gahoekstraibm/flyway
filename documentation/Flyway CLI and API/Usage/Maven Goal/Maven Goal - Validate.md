@@ -5,7 +5,7 @@ subtitle: 'mvn flyway:validate'
 # Maven Goal: Validate
 
 Validate applied migrations against resolved ones (on the filesystem or classpath)
-to detect accidental changes that may prevent the schema(s) from being recreated exactly.
+to detect accidental changes that may prevent the schemas from being recreated exactly.
 
 Validation fails if
 - differences in migration names, types or checksums are found
@@ -78,7 +78,6 @@ See [configuration](Configuration/parameters) for a full list of supported confi
     <skipDefaultCallbacks>false</skipDefaultCallbacks>
     <target>1.1</target>
     <outOfOrder>false</outOfOrder>
-    <cleanOnValidationError>false</cleanOnValidationError>
     <oracle.sqlplus>true</oracle.sqlplus>
     <oracle.sqlplusWarn>true</oracle.sqlplusWarn>
     <skip>false</skip>

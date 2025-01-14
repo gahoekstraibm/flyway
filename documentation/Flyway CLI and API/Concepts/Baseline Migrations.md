@@ -3,13 +3,12 @@ subtitle: Baseline Migrations
 redirect_from: Concepts/statescripts
 ---
 # Baseline Migrations
-{% include teams.html %}
 
 Over the lifetime of a project, many database objects may be created and destroyed across many migrations which leaves behind a lengthy history of migrations that need to be applied in order to bring a new environment up to speed.
 
 Instead, you might wish to add a single, cumulative migration that represents the state of your database after all of those migrations have been applied without disrupting existing environments.
 
-[Flyway Teams Edition](/https://flywaydb.org/download) gives you a way to achieve this using **Baseline Migrations**.
+Flyway gives you a way to achieve this using **Baseline Migrations**.
 
 ## How it works
 
@@ -25,11 +24,11 @@ This mechanism is fully automated and requires no modification in your pipeline 
 
 ## Configuration
 
-The `B` prefix is configurable with the [baselineMigrationPrefix](Configuration/Parameters/Baseline Migration Prefix) parameter.
+The `B` prefix is configurable with the [baselineMigrationPrefix](Configuration/Parameters/Flyway/Baseline Migration Prefix) parameter.
 
 ## Compatibility Note
 
-Baseline migrations were formally known as State Scripts. These can be used as baseline migrations without modification, by either changing the prefix of your state scripts to be `B` or setting the value of the [baselineMigrationPrefix](Configuration/Parameters/Baseline Migration Prefix) parameter to `S`.
+Baseline migrations were formally known as State Scripts. These can be used as baseline migrations without modification, by either changing the prefix of your state scripts to be `B` or setting the value of the [baselineMigrationPrefix](Configuration/Parameters/Flyway/Baseline Migration Prefix) parameter to `S`.
 
 ## Tutorial
 

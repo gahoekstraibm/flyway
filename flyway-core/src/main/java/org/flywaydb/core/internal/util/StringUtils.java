@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.util;
 
@@ -25,6 +29,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.flywaydb.core.internal.configuration.ConfigUtils;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class StringUtils {
@@ -240,35 +245,6 @@ public class StringUtils {
     }
 
     /**
-     * Replace all occurrences of a substring within a string with
-     * another string.
-     *
-     * @param inString String to examine
-     * @param oldPattern String to replace
-     * @param newPattern String to insert
-     * @return a String with the replacements
-     */
-    public static String replace(String inString, String oldPattern, String newPattern) {
-        if (!hasLength(inString) || !hasLength(oldPattern) || newPattern == null) {
-            return inString;
-        }
-        StringBuilder sb = new StringBuilder();
-        int pos = 0; // our position in the old string
-        int index = inString.indexOf(oldPattern);
-        // the index of an occurrence we've found, or -1
-        int patLen = oldPattern.length();
-        while (index >= 0) {
-            sb.append(inString, pos, index);
-            sb.append(newPattern);
-            pos = index + patLen;
-            index = inString.indexOf(oldPattern, pos);
-        }
-        sb.append(inString.substring(pos));
-        // remember to append any characters to the right of a match
-        return sb.toString();
-    }
-
-    /**
      * Convenience method to return a Collection as a comma-delimited
      * String. e.g. useful for {@code toString()} implementations.
      *
@@ -431,5 +407,84 @@ public class StringUtils {
         } else {
             return Pair.of(input, "");
         }
+    }
+
+    public static int countOccurrencesOf(String text, char search) {
+        int count = 0;
+        for (char c : text.toCharArray()) {
+            if (c == search) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public static String getDaysString(long days) {
+        return days + " day" + pluralizeSuffix(days);
+    }
+
+    public static String pluralizeSuffix(long input) {
+        return input != 1 ? "s" : "";
+    }
+
+    public static String capitalizeFirstLetter(String str) {
+        if(!hasText(str)) {
+            return "";
+        }
+
+        String result = str.substring(0, 1).toUpperCase();
+        if (str.length() > 1) {
+            result += str.substring(1);
+        }
+        return result;
+    }
+
+    public static String redactedValueStringOfAMap(String value) {
+        if (!hasText(value) ||
+            !value.startsWith("{") ||
+            !value.endsWith("}") ||
+            value.length() <= 2) {
+            return value;
+        }
+
+        value = value.substring(1, value.length() - 1).trim();
+        String[] pairs = value.split(",");
+        StringBuilder resultBuilder = new StringBuilder();
+
+        for (String s : pairs) {
+            String[] pair = s.trim().split("=");
+
+            if(pair.length != 2) {
+                continue;
+            }
+
+            pair[0] = pair[0].trim();
+            pair[1] = pair[1].trim();
+
+            pair[1] = redactValueIfSensitive(pair[0], pair[1]);
+
+            resultBuilder.append(pair[0]).append("=").append(pair[1]).append(",").append(" ");
+        }
+
+        String result = resultBuilder.toString().trim();
+
+        if (result.endsWith(",")) {
+            result = result.substring(0, result.length() - 1);
+        }
+
+        return "{" + result + "}";
+    }
+
+    public static String redactValueIfSensitive(String key, String value) {
+        if (!hasText(key) || !hasText(value)) {
+            return value;
+        }
+
+        if (key.toLowerCase().endsWith("password") || key.toLowerCase().endsWith("token")
+            || ConfigUtils.LICENSE_KEY.equalsIgnoreCase(key)) {
+            value = "********";
+        }
+
+        return value;
     }
 }

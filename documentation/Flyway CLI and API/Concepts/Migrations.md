@@ -21,10 +21,22 @@ Optionally their effect can be undone by supplying an **undo migration** with th
 (re-)applied every time their checksum changes.
 
 Within a single migration run, repeatable migrations are always applied last, after all pending versioned migrations
-have been executed. Repeatable migrations are applied in the order of their description.
+have been executed. Repeatable migrations are applied in the alphanumeric order of their description.
 
 By default both versioned and repeatable migrations can be written either in **[SQL](Concepts/migrations#sql-based-migrations)**
 or in **[Java](Concepts/migrations#java-based-migrations)** and can consist of multiple statements.
+
+A short summary:
+
+| Migration Type | Category         |  Example
+|----------------|------------------| -----------------------------------------------------
+| SQL            | Versioned        | V2__Add_new_table.sql
+| SQL            | Versioned (Undo) | U2__Add_new_table.sql
+| SQL            | Repeatable       | R__Add_new_table.sql
+| Java           | Versioned        | V2__Add_new_table.java
+| Java           | Repeatable       | R__Add_new_table.java
+| Script         | Versioned        | V1__execute_batch_tool.ps1
+| Script         | Repeatable       | R__execute_batch_tool.ps1
 
 Flyway automatically discovers migrations on the *filesystem* and on the Java *classpath*.
 
@@ -174,13 +186,13 @@ In order to be picked up by Flyway, SQL migrations must comply with the followin
 </div>
 
 The file name consists of the following parts:
-- **Prefix**: `V` for versioned ([configurable](Configuration/Parameters/SQL Migration Prefix)),
-`U` for undo ([configurable](Configuration/Parameters/Undo SQL Migration Prefix)) and
-`R` for repeatable migrations ([configurable](Configuration/Parameters/Repeatable SQL Migration Prefix))
+- **Prefix**: `V` for versioned ([configurable](Configuration/Parameters/Flyway/SQL Migration Prefix)),
+`U` for undo ([configurable](Configuration/Parameters/Flyway/Undo SQL Migration Prefix)) and
+`R` for repeatable migrations ([configurable](Configuration/Parameters/Flyway/Repeatable SQL Migration Prefix))
 - **Version**: Version with dots or underscores separate as many parts as you like (Not for repeatable migrations)
-- **Separator**: `__` (two underscores) ([configurable](Configuration/Parameters/SQL Migration Separator))
+- **Separator**: `__` (two underscores) ([configurable](Configuration/Parameters/Flyway/SQL Migration Separator))
 - **Description**: Underscores or spaces separate the words
-- **Suffix**: `.sql` ([configurable](Configuration/Parameters/SQL Migration Suffixes))
+- **Suffix**: `.sql` ([configurable](Configuration/Parameters/Flyway/SQL Migration Suffixes))
 
 Optionally versioned SQL migrations can also omit both the separator and the description.
 
@@ -190,7 +202,7 @@ Flyway will fail fast and list all files which need to be corrected.
 
 ### Discovery
 
-Flyway discovers SQL-based migrations from one or more directories referenced by the **[`locations`](Configuration/parameters/locations)**
+Flyway discovers SQL-based migrations from one or more directories referenced by the **[`locations`](Configuration/parameters/flyway/locations)**
 property.
 - Unprefixed locations or locations with the `classpath:` prefix target the Java classpath.
 - Locations with the `filesystem:` prefix search the file system.
@@ -214,7 +226,7 @@ property.
     <i class="fa fa-file-text"></i> V1.2__Add_constraints.sql</pre>
 
 New SQL-based migrations are **discovered automatically** through filesystem and Java classpath scanning at runtime.
-Once you have configured the [`locations`](Configuration/parameters/locations) you want to use, Flyway will
+Once you have configured the [`locations`](Configuration/parameters/flyway/locations) you want to use, Flyway will
 automatically pick up any new SQL migrations as long as they conform to the configured *naming convention*.
 
 This scanning is recursive. All migrations in non-hidden directories below the specified ones are also picked up.
@@ -226,7 +238,7 @@ Flyway supports all regular SQL syntax elements including:
 - Single- (--) or Multi-line (/* */) comments spanning complete lines
 - Database-specific SQL syntax extensions (PL/SQL, T-SQL, ...) typically used to define stored procedures, packages, ...
 
-Additionally in the case of Oracle, Flyway also supports [SQL*Plus commands](Supported Databases/oracle#sqlplus-commands).
+Additionally in the case of Oracle, Flyway also supports [SQL*Plus commands](Supported Databases/oracle database#sqlplus-commands).
 
 ### Placeholder Replacement
 In addition to regular SQL syntax, Flyway also supports placeholder replacement with configurable pre- and suffixes.
@@ -242,11 +254,13 @@ These would typically be things like
 - BLOB &amp; CLOB changes
 - Advanced bulk data changes (Recalculations, advanced format changes, ...)
 
+_Note: Java-based migrations are [not currently supported by Native Connectors](https://documentation.red-gate.com/display/FD/Flyway+Native+Connectors+-+MongoDB)._ 
+
 ### Naming
 
 In order to be picked up by Flyway, Java-based Migrations must implement the
-[`JavaMigration`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/migration/JavaMigration) interface. Most users
-however should inherit from the convenience class [`BaseJavaMigration`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/migration/BaseJavaMigration)
+[`JavaMigration`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/migration/JavaMigration.html) interface. Most users
+however should inherit from the convenience class [`BaseJavaMigration`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/migration/BaseJavaMigration.html)
 instead as it encourages Flyway's default naming convention, enabling Flyway to automatically extract the version and
 the description from the class name. To be able to do so, the class name must comply with the following naming pattern:
 
@@ -284,7 +298,7 @@ The class name consists of the following parts:
 - **Description**: Underscores (automatically replaced by spaces at runtime) separate the words
 
 If you need more control over the class name, you can override the default convention by implementing the
-[`JavaMigration`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/migration/JavaMigration) interface directly.
+[`JavaMigration`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/migration/JavaMigration.html) interface directly.
 
 This will allow you to name your class as you wish. Version, description and migration category are provided by
 implementing the respective methods.
@@ -292,7 +306,7 @@ implementing the respective methods.
 ### Discovery
 
 Flyway discovers Java-based migrations on the Java classpath in the packages referenced by the
-[`locations`](Configuration/parameters/locations) property.
+[`locations`](Configuration/parameters/flyway/locations) property.
 
 <pre class="filetree"><i class="fa fa-folder-open"></i> my-project
   <i class="fa fa-folder-open"></i> src
@@ -367,9 +381,10 @@ public class V1_2__Another_user extends BaseJavaMigration {
 ```
 
 ## Script migrations
-{% include teams.html %}
 
-Sometimes it may be more desirable to use a scripting language for migrations. Flyway Teams currently supports the `.ps1`, `.bat`, `.cmd`, `.sh`, `.bash`, `.py` file extensions as migrations, and on non-windows platforms it also supports migrations without extensions (assuming a valid [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix))).
+Sometimes it may be more desirable to use a scripting language for migrations. Flyway currently supports the `.ps1`, `.bat`, `.cmd`, `.sh`, `.bash`, `.py` file extensions as migrations, and on non-windows platforms it also supports migrations without extensions (assuming a valid [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix))).
+
+_Note: Script migrations are [not currently supported by Native Connectors](https://documentation.red-gate.com/display/FD/Flyway+Native+Connectors+-+MongoDB)._
 
 These migrations follow the same [naming scheme](Concepts/migrations#naming) as SQL migrations, with only the file extension being different. For example `V1__execute_batch_tool.ps1` is a valid migration.
 
@@ -388,20 +403,36 @@ On linux, if executing an extensionless migration that is not set to be executab
 The migration checksum is only calculated for the migration itself, not for any files it references or loads.
 
 ## Transactions
+Flyway wraps the execution of each migration script in a single transaction and applies them in order. For example, if I have 3 pending migrations on my target, calling `flyway migrate` looks like:
 
-By default, Flyway always wraps the execution of an entire migration within a single transaction.
+```
+- Execute V001
+  If success, commit and continue; else rollback (if possible) and stop - do not process any further pending migrations
+- Execute V002
+  If success, commit and continue; else rollback (if possible) and stop - do not process any further pending migrations
+- Execute V003
+  If success, commit and continue; else rollback (if possible) and stop - do not process any further pending migrations
+```
 
-Alternatively you can also configure Flyway to wrap the entire execution of all migrations of a single migration run
-within a single transaction by setting the [`group`](Configuration/parameters/group) property to `true`.
+Alternatively, for certain databases, for each `migrate`, you can configure Flyway to wrap the execution of all pending migrations in a single transaction by setting the [`group`](Configuration/parameters/flyway/group) property to `true`. This would look like:
+
+```
+Begin a transaction
+  Execute V001
+  Execute V002
+  Execute V003
+End transaction
+If there are errors at any point, rollback to the starting point and stop processing.
+```
 
 If Flyway detects that a specific statement cannot be run within a transaction due to technical limitations of your
-database, it won't run that migration within a transaction. Instead it will be marked as *non-transactional*.
+database, it won't run that migration within a transaction. Instead, it will be marked as *non-transactional*.
 
-By default transactional and non-transactional statements cannot be mixed within a migration run. You can however allow
-this by setting the [`mixed`](Configuration/parameters/mixed) property to `true`. Note that this is only
-applicable for PostgreSQL, Aurora PostgreSQL, SQL Server and SQLite which all have statements that do not run at all
-within a transaction. This is not to be confused with implicit transaction, as they occur in MySQL or Oracle, where even
-though a DDL statement was run within a transaction, the database will issue an implicit commit before and after
+If the `group` property is set to true, then transactional and non-transactional statements cannot be mixed within a
+migration run. You can allow this by setting the [`mixed`](Configuration/parameters/flyway/mixed) property to `true`. Note that
+this is only applicable for PostgreSQL, Aurora PostgreSQL, SQL Server and SQLite which all have statements that do not
+run at all within a transaction. This is not to be confused with implicit transactions, as they occur in MySQL or Oracle,
+where even though a DDL statement was run within a transaction, the database will issue an implicit commit before and after
 its execution.
 
 ### Manual override
@@ -433,17 +464,14 @@ the need to visually inspect the result of SQL queries.
 There are however some scenarios where such manual inspection makes sense, and therefore Flyway will display query results in the usual tabular form when a `SELECT` statement (or any other statement that returns results) is executed.
 
 ### Toggling query results
-{% include teams.html %}
 
-To prevent Flyway from displaying query results, set the configuration option [`outputQueryResults`](Configuration/Parameters/Output Query Results) to `false`.
+To prevent Flyway from displaying query results, set the configuration option [`outputQueryResults`](Configuration/Parameters/Flyway/Output Query Results) to `false`.
 
 ## Schema History Table
 
 To keep track of which migrations have already been applied when and by whom, Flyway adds a special
 **schema history table** to your schema. You can think of this table as a complete audit trail of all changes
 performed against the schema. It also tracks migration checksums and whether or not the migrations were successful.
-
-Read more about this in our getting started guide on [how Flyway works](Getting Started/how).
 
 ## Schema creation
 
@@ -495,22 +523,26 @@ The following will happen:
 
 ## Migration States
 
-| State              | Description                                                                                                                                               |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Pending`          | This migration has not been applied yet                                                                                                                   |
-| `Success`          | This migration succeeded                                                                                                                                  |
-| `Ignored`          | This migration will not be considered when running [`migrate`](Commands/migrate)                                                            |
-| `Deleted`          | This is a migration that has been marked as deleted by [`repair`](Commands/undo)                                                            |
-| `Available`        | This [`undo`](Commands/undo) migration is ready to be applied if desired                                                                    |
-| `Undone`           | This versioned migration succeeded but has since been undone                                                                                              |
-| `Above Target`     | This migration has not been applied yet and won't be applied because [`target`](Configuration/parameters/target) is set to a lower version |
-| `Baseline`         | This migration has [`baselined`](Commands/baseline) this DB                                                                                 |
-| `Below Baseline`   | This migration was not applied against this DB because the schema history table was [`baselined`](Commands/baseline) with a higher version  |
-| `Missing`          | This migration succeeded and could not be resolved                                                                                                        |
-| `Failed (Missing)` | This migration failed and could not be resolved                                                                                                           |
-| `Failed`           | This migration failed                                                                                                                                     |
-| `Failed (Future)`  | This migration failed and its version is higher than the schema history table's current version                                                           |
-| `Future`           | This migration succeeded and its version is higher than the schema history table's current version                                                        |
-| `Out of Order`     | This migration succeeded but it was applied out of order. Rerunning the entire migration history might produce different results!                         |
-| `Outdated`         | This is a [`repeatable`](Tutorials/Tutorial Repeatable Migrations) migration that is outdated and should be re-applied                               |
-| `Superseded`       | This is a [`repeatable`](Tutorials/Tutorial Repeatable Migrations) migration that is outdated and has already been superseded by a newer one         |
+| State              | Description                                                                                                                                       |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Pending`          | This migration has not been applied yet                                                                                                           |
+| `Success`          | This migration succeeded                                                                                                                          |
+| `Ignored`          | This migration will not be considered when running [`migrate`](Commands/migrate)                                                                  |
+| `Deleted`          | This is a migration that has been marked as deleted by [`repair`](Commands/repair)                                                                  |
+| `Available`        | This [`undo`](Commands/undo) migration is ready to be applied if desired                                                                          |
+| `Undone`           | This versioned migration succeeded but has since been undone                                                                                      |
+| `Above Target`     | This migration has not been applied yet and won't be applied because [`target`](Configuration/parameters/flyway/target) is set to a lower version |
+| `Baseline`         | This migration has [`baselined`](Commands/baseline) this DB                                                                                       |
+| `Below Baseline`   | This migration was not applied against this DB because the schema history table was [`baselined`](Commands/baseline) with a higher version        |
+| `Missing`          | This migration succeeded and could not be resolved                                                                                                |
+| `Failed (Missing)` | This migration failed and could not be resolved                                                                                                   |
+| `Failed`           | This migration failed                                                                                                                             |
+| `Failed (Future)`  | This migration failed and its version is higher than the schema history table's current version                                                   |
+| `Future`           | This migration succeeded and its version is higher than the current highest resolved migration. This may be missing from your local environment                         |
+| `Out of Order`     | This migration succeeded but it was applied out of order. Rerunning the entire migration history might produce different results!                 |
+| `Outdated`         | This is a [`repeatable`](Tutorials/Tutorial Repeatable Migrations) migration that is outdated and should be re-applied                            |
+| `Superseded`       | This is a [`repeatable`](Tutorials/Tutorial Repeatable Migrations) migration that is outdated and has already been superseded by a newer one      |
+
+## Learn More
+
+* [Migration Report](Reports/Reports - Migration)

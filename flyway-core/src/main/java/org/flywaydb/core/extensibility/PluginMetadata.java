@@ -1,25 +1,29 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.extensibility;
 
-import org.flywaydb.core.internal.util.Pair;
-import org.flywaydb.core.internal.util.StringUtils;
-
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.flywaydb.core.internal.util.Pair;
+import org.flywaydb.core.internal.util.StringUtils;
 
 public interface PluginMetadata extends Plugin {
     /**
@@ -35,26 +39,44 @@ public interface PluginMetadata extends Plugin {
         String example = getExample();
         String documentationLink = getDocumentationLink();
 
+        if (inPreview()) {
+            result.append("(In preview)\n\n");
+        }
+
         if (description != null) {
-            result.append("Description:\n").append(indent).append(description).append("\n\n");
+            result.append("Description:\n");
+            Arrays.stream(description.split("\n")).map(String::trim).forEach(line -> result.append(indent)
+                .append(line)
+                .append("\n"));
+            result.append("\n");
         }
 
         int padSize = 0;
         if (configurationParameters != null) {
-            padSize = configurationParameters.stream().mapToInt(p -> p.name.length()).max().orElse(0) + 2;
+            padSize = configurationParameters.stream().map(p -> p.name + (p.required ? " [REQUIRED]" : "")).mapToInt(
+                String::length).max().orElse(0) + 2;
         }
         if (flags != null) {
-            padSize = Math.max(padSize, flags.stream().mapToInt(p -> p.name.length()).max().orElse(0) + 2);
+            padSize = Math.max(padSize, flags.stream().map(p -> p.name + (p.required ? " [REQUIRED]" : "")).mapToInt(
+                String::length).max().orElse(0) + 2);
         }
 
         if (configurationParameters != null) {
             result.append("Configuration parameters: (Format: -key=value)\n");
             for (ConfigurationParameter p : configurationParameters) {
-                result.append(indent).append(StringUtils.rightPad(p.name.substring("flyway.".length()), padSize, ' ')).append(p.description);
-                if (p.required) {
-                    result.append(" [REQUIRED]");
+                final String parameterName = p.name.startsWith("flyway.")
+                    ? p.name.substring("flyway.".length())
+                    : p.name;
+                final String fullParameter = parameterName + (p.required ? " [REQUIRED]" : "");
+                result.append(indent).append(StringUtils.rightPad(fullParameter, padSize, ' '));
+
+                final String descriptionPadding = " ".repeat(indent.length() + padSize);
+                final List<String> descriptionLines = Arrays.stream(p.description.split("\n")).toList();
+
+                result.append(descriptionLines.get(0)).append("\n");
+                for (int i = 1; i < descriptionLines.size(); i++) {
+                    result.append(descriptionPadding).append(descriptionLines.get(i)).append("\n");
                 }
-                result.append("\n");
             }
             result.append("\n");
         }
@@ -62,11 +84,9 @@ public interface PluginMetadata extends Plugin {
         if (flags != null) {
             result.append("Flags:\n");
             for (ConfigurationParameter p : flags) {
-                result.append(indent).append(StringUtils.rightPad(p.name, padSize, ' ')).append(p.description);
-                if (p.required) {
-                    result.append(" [REQUIRED]");
-                }
-                result.append("\n");
+                final String flagName = p.name + (p.required ? " [REQUIRED]" : "");
+                result.append(indent).append(StringUtils.rightPad(flagName, padSize, ' ')).append(p.description).append(
+                    "\n");
             }
             result.append("\n");
         }
@@ -122,5 +142,9 @@ public interface PluginMetadata extends Plugin {
      */
     default String getDocumentationLink() {
         return null;
+    }
+
+    default boolean inPreview() {
+        return false;
     }
 }

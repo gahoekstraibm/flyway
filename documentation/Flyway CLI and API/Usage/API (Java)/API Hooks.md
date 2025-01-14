@@ -8,13 +8,13 @@ There are three ways you can hook into the Flyway API.
 
 ## Java-based Migrations
 
-The first one is the the most common one: [Java-based Migrations](Concepts/migrations#java-based-migrations)
+The first one is the most common one: [Java-based Migrations](Concepts/migrations#java-based-migrations)
 when you need more power than SQL can offer you. This is great to for dealing with LOBs or performing advanced
 data transformations.
 
 In order to be picked up by Flyway, Java-based Migrations must implement the
-[`JavaMigration`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/migration/JavaMigration) interface. Most users
-however should inherit from the convenience class [`BaseJavaMigration`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/migration/BaseJavaMigration)
+[`JavaMigration`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/migration/JavaMigration.html) interface. Most users
+however should inherit from the convenience class [`BaseJavaMigration`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/migration/BaseJavaMigration.html)
 instead as it encourages Flyway's default naming convention, enabling Flyway to automatically extract the version and
 the description from the class name.
 
@@ -48,7 +48,7 @@ flyway.migrate();
 Building upon that are the Java-based [Callbacks](Concepts/Callback concept)
 when you need more power or flexibility in a Callback than SQL can offer you.
 
-They can be created by implementing the [**Callback**](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/callback/Callback)
+They can be created by implementing the [**Callback**](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/callback/Callback.html)
 interface:
 
 ```java
@@ -98,7 +98,7 @@ public interface Callback {
 }
 ```
 
-The `event` argument tells you which [`Event`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/callback/Event) 
+The `event` argument tells you which [`Event`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/callback/Event.html) 
 (`beforeClean`, `afterMigrate`, ...) is being handled and the `context` argument gives you access to things
 like the database connection and the Flyway configuration.
 
@@ -138,11 +138,14 @@ public class MyNotifierCallback implements Callback {
 In order to be picked up by Flyway, Java-based Callbacks must implement the Callback interface. 
 Flyway will automatically scan for and load all callbacks found in the `db/callback` package. Additional callback classes or scan locations can be specified by the `flyway.callbacks` configuration property.
 
+Furthermore, a new Exception type, `FlywayBlockStatementExecutionException`, has been introduced to facilitate the uninterrupted progression of the entire migration process. 
+To ensure that an error in your Java callback does not halt the migration, you can raise a `FlywayBlockStatementExecutionException` within your java callback when dealing with `BEFORE_EACH_MIGRATE_STATEMENT`. This approach allows the migration process to persist rather than terminating upon encountering an error. 
+
 ## Custom Migration resolvers &amp; executors
 
 For those that need more than what the SQL and Java-based migrations offer, you also have the possibility to
-implement your own [`MigrationResolver`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/resolver/MigrationResolver)
-coupled with a custom [`MigrationExecutor`](https://flywaydb.org/documentation/usage/api/javadoc/org/flywaydb/core/api/executor/MigrationExecutor).
+implement your own [`MigrationResolver`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/resolver/MigrationResolver.html)
+coupled with a custom [`MigrationExecutor`](https://javadoc.io/doc/org.flywaydb/flyway-core/latest/org/flywaydb/core/api/executor/MigrationExecutor.html).
 
 These can then be used for loading things like CSV-based migrations or other custom formats.
 

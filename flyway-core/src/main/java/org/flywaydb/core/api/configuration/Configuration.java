@@ -1,25 +1,35 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.api.configuration;
 
+import org.flywaydb.core.ProgressLogger;
 import org.flywaydb.core.api.*;
 import org.flywaydb.core.api.callback.Callback;
 import org.flywaydb.core.api.migration.JavaMigration;
 import org.flywaydb.core.api.pattern.ValidatePattern;
 import org.flywaydb.core.api.resolver.MigrationResolver;
+import org.flywaydb.core.internal.configuration.models.ConfigurationModel;
+import org.flywaydb.core.internal.configuration.models.DataSourceModel;
+import org.flywaydb.core.internal.configuration.models.ResolvedEnvironment;
+import org.flywaydb.core.internal.configuration.resolvers.ProvisionerMode;
+import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.plugin.PluginRegister;
 
 import javax.sql.DataSource;
@@ -28,6 +38,11 @@ import java.nio.charset.Charset;
 import java.util.Map;
 
 public interface Configuration {
+    /**
+     * @apiNote Currently under development and not recommended for use.
+     */
+    ConfigurationModel getModernConfig();
+
     /**
      * Retrieves the ClassLoader to use for loading migrations, resolvers, etc. from the classpath.
      *
@@ -41,11 +56,26 @@ public interface Configuration {
     PluginRegister getPluginRegister();
 
     /**
+     * Get the filename of generated reports
+     * @return report filename;
+     */
+    String getReportFilename();
+
+    /*
+     * Get whether reports are enabled.
+     * @return reports enabled;
+     */
+    boolean isReportEnabled();
+
+    /**
      * Retrieves the url used to construct the dataSource. May be null if the dataSource was passed in directly.
+     * This method will trigger an environment resolution operation if no environment has been resolved yet.
      *
      * @return The url used to construct the dataSource. May be null if the dataSource was passed in directly.
      */
     String getUrl();
+
+    String getWorkingDirectory();
 
     /**
      * Retrieves the user used to construct the dataSource. May be null if the dataSource was passed in directly, or if dataSource did not need a user.
@@ -144,15 +174,11 @@ public interface Configuration {
     String getSqlMigrationPrefix();
 
     /**
-     * The file name prefix for undo SQL migrations.
-     * Undo SQL migrations are responsible for undoing the effects of the versioned migration with the same version.
-     * They have the following file name structure: prefixVERSIONseparatorDESCRIPTIONsuffix,
-     * which using the defaults translates to U1.1__My_description.sql
-     * <i>Flyway Teams only</i>
+     * Checks whether SQL is executed in a transaction.
      *
-     * @return The file name prefix for undo sql migrations. (default: U)
+     * @return Whether SQL is executed in a transaction. (default: true)
      */
-    String getUndoSqlMigrationPrefix();
+    boolean isExecuteInTransaction();
 
     /**
      * Retrieves the file name prefix for repeatable SQL migrations.
@@ -370,8 +396,6 @@ public interface Configuration {
      *
      * Use in conjunction with {@code cherryPick} to skip specific migrations instead of all pending ones.
      *
-     * <i>Flyway Teams only</i>
-     *
      * @return {@code true} if executing the migrations should be skipped on migrate, {@code false} if not. (default: {@code false})
      */
     boolean isSkipExecutingMigrations();
@@ -387,10 +411,9 @@ public interface Configuration {
     /**
      * Ignore migrations that match this comma-separated list of patterns when validating migrations.
      * Each pattern is of the form <migration_type>:<migration_state>
-     * See https://flywaydb.org/documentation/configuration/parameters/ignoreMigrationPatterns for full details
+     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
      * Example: repeatable:missing,versioned:pending,*:failed
      * (default: *:future)
-     * <i>Flyway Teams only</i>
      */
     ValidatePattern[] getIgnoreMigrationPatterns();
 
@@ -428,6 +451,15 @@ public interface Configuration {
      * @return {@code true} to disable clean. {@code false} to be able to clean. (default: {@code true})
      */
     boolean isCleanDisabled();
+
+
+    /**
+     * Whether to disable community database support.
+     * This is especially useful for production environments where using community databases is undesirable.
+     *
+     * @return {@code true} to disable community database support. {@code false} to be able to use community database support. (default: {@code false})
+     */
+    boolean isCommunityDBSupportEnabled();
 
     /**
      * Whether to allow mixing transactional and non-transactional statements within the same migration. Enabling this
@@ -519,42 +551,10 @@ public interface Configuration {
     boolean isBatch();
 
     /**
-     * Whether to Flyway's support for Oracle SQL*Plus commands should be activated.
-     *
-     * <i>Flyway Teams only</i>
-     *
-     * @return {@code true} to active SQL*Plus support. {@code false} to fail fast instead. (default: {@code false})
-     */
-    boolean isOracleSqlplus();
-
-    /**
-     * Whether Flyway should issue a warning instead of an error whenever it encounters an Oracle SQL*Plus statement
-     * it doesn't yet support.
-     *
-     * <i>Flyway Teams only</i>
-     *
-     * @return {@code true} to issue a warning. {@code false} to fail fast instead. (default: {@code false})
-     */
-    boolean isOracleSqlplusWarn();
-
-    /**
      * The path to the Kerberos config file.
      * <i>Flyway Teams only</i>
      */
     String getKerberosConfigFile();
-
-    String getOracleKerberosCacheFile();
-
-    /**
-     * Your Flyway license key (FL01...). Not yet a Flyway Teams Edition customer?
-     * Request your <a href="https://flywaydb.org/download">Flyway trial license key</a>
-     * to try out Flyway Teams Edition features free for 30 days.
-     *
-     * <i>Flyway Teams only</i>
-     *
-     * @return Your Flyway license key.
-     */
-    String getLicenseKey();
 
     /**
      * Whether Flyway should output a table with the results of queries when executing migrations.
@@ -608,19 +608,12 @@ public interface Configuration {
     boolean isFailOnMissingLocations();
 
     /**
-     * The location of your Oracle wallet, used to automatically sign in to your databases.
-     *
-     * <i>Flyway Teams only</i>
-     */
-    String getOracleWalletLocation();
-
-    /**
      * The loggers Flyway should use. Valid options are:
      *
      * <ul>
      *     <li>auto: Auto detect the logger (default behavior)</li>
      *     <li>console: Use stdout/stderr (only available when using the CLI)</li>
-     *     <li>slf4j2: Use the slf4j2 logger</li>
+     *     <li>slf4j: Use the slf4j logger</li>
      *     <li>log4j2: Use the log4j2 logger</li>
      *     <li>apache-commons: Use the Apache Commons logger</li>
      * </ul>
@@ -628,4 +621,34 @@ public interface Configuration {
      * Alternatively you can provide the fully qualified class name for any other logger to use that.
      */
     String[] getLoggers();
+
+    /**
+     * The JDBC driver of the configuration
+     */
+    String getDriver();
+
+    /**
+     * Get the Database type determined by the URL or Datasource
+     * If there are multiple matching DatabaseTypes for the URL, the first candidate will be returned.
+     */
+    DatabaseType getDatabaseType();
+
+    /**
+     *  Gets the connection environments that have already been resolved from this configuration
+     */
+    Map<String, ResolvedEnvironment> getCachedResolvedEnvironments();
+
+    /**
+     *  Gets DataSources for all the environments
+     */
+    Map<String, DataSourceModel> getCachedDataSources();
+
+    /**
+     *  Get the name of the current environment
+     */
+    String getCurrentEnvironmentName();
+
+    ProgressLogger createProgress(String operationName);
+
+    ResolvedEnvironment getResolvedEnvironment(String envName, ProvisionerMode provisionerMode, ProgressLogger progress);
 }

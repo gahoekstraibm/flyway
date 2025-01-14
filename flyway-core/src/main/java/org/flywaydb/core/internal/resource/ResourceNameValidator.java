@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.resource;
 
@@ -21,6 +25,8 @@ import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.api.resource.LoadableResource;
 import org.flywaydb.core.api.resource.Resource;
+import org.flywaydb.core.internal.database.DatabaseType;
+import org.flywaydb.core.internal.database.DatabaseTypeRegister;
 import org.flywaydb.core.internal.util.StringUtils;
 
 import java.util.ArrayList;
@@ -35,7 +41,7 @@ public class ResourceNameValidator {
      * @param provider The ResourceProvider to validate
      * @param configuration The configuration to use
      */
-    public void validateSQLMigrationNaming(ResourceProvider provider, Configuration configuration) {
+    public void validateSQLMigrationNaming(ResourceProvider provider, Configuration configuration, DatabaseType databaseType) {
 
         List<String> errorsFound = new ArrayList<>();
         ResourceNameParser resourceNameParser = new ResourceNameParser(configuration);
@@ -44,7 +50,7 @@ public class ResourceNameValidator {
             String filename = resource.getFilename();
             LOG.debug("Validating " + filename);
             // Filter out special purpose files that the parser will not identify.
-            if (isSpecialResourceFile(configuration, filename)) {
+            if (isSpecialResourceFile(configuration, filename, databaseType)) {
                 continue;
             }
 
@@ -59,7 +65,7 @@ public class ResourceNameValidator {
                 throw new FlywayException("Invalid SQL filenames found:\r\n" + StringUtils.collectionToDelimitedString(errorsFound, "\r\n"));
             } else {
                 LOG.info(errorsFound.size() + " SQL migrations were detected but not run because they did not follow the filename convention.");
-                LOG.info("If this is in error, enable debug logging or 'validateMigrationNaming' to fail fast and see a list of the invalid file names.");
+                LOG.info("Set 'validateMigrationNaming' to true to fail fast and see a list of the invalid file names.");
             }
         }
     }
@@ -68,14 +74,8 @@ public class ResourceNameValidator {
         return provider.getResources("", configuration.getSqlMigrationSuffixes());
     }
 
-    private boolean isSpecialResourceFile(Configuration configuration, String filename) {
-
-
-
-
-
-
-
-        return false;
+    private boolean isSpecialResourceFile(Configuration configuration, String filename, DatabaseType databaseType) {
+        return databaseType != null && databaseType.getSpecialResourceFilenames(configuration)
+            .contains(filename.toLowerCase());
     }
 }

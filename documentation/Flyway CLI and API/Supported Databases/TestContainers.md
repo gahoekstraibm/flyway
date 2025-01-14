@@ -1,67 +1,30 @@
 ---
-subtitle: TestContainers
+subtitle: Testcontainers
 ---
-# TestContainers
+# Testcontainers
+- **Verified Versions:** N/A
+- **Maintainer:** Redgate
 
-## Support Level
+## Supported Versions and Support Levels
 
-<table class="table">
-    <tr>
-        <th width="25%">Compatible</th>
-        <td>&#10003;</td>
-    </tr>
-    <tr>
-        <th width="25%">Certified</th>
-        <td>&#10003;</td>
-    </tr>
-    <tr>
-        <th width="25%">Guaranteed</th>
-        <td>&#10003; {% include teams.html %}</td>
-    </tr>
-</table>
-
-Support Level determines the degree of support available for this database ([learn more](Learn More/Database Support Levels)). 
+{% include database-boilerplate.html %}
 
 ## Driver
-<table class="table">
-<tr>
-<th>URL format</th>
-<td><code>jdbc:tc:</code> instead of <code>jdbc:</code> for your database</td>
-</tr>
-<tr>
-<th>Ships with Flyway Command-line</th>
-<td>No</td>
-</tr>
-<tr>
-<th>Maven Central coordinates</th>
-<td>Database specific JARs: <br/>
-<code>org.testcontainers:cockroachdb:jar:1.14.3</code> <br/>
-<code>org.testcontainers:db2:jar:1.14.3</code> <br/>
-<code>org.testcontainers:mariadb:jar:1.14.3</code> <br/>
-<code>org.testcontainers:mssqlserver:jar:1.14.3</code> <br/>
-<code>org.testcontainers:mysql:jar:1.14.3</code> <br/>
-<code>org.testcontainers:oracle-xe:jar:1.14.3</code> <br/>
-<code>org.testcontainers:postgresql:jar:1.14.3</code> <br/>
-Dependencies: <br/>
-<code>org.testcontainers:jdbc:jar:1.14.3</code> <br/>
-<code>org.testcontainers:database-commons:jar:1.14.3</code> <br/>
-<code>org.testcontainers:testcontainers:jar:1.14.3</code></td>
-</tr>
-<tr>
-<th>Supported versions</th>
-<td><code>1.14.3</code></td>
-</tr>
-<tr>
-<th>Default Java class</th>
-<td><code>org.testcontainers.jdbc.ContainerDatabaseDriver</code></td>
-</tr>
-</table>
 
-- See the [TestContainers documentation](https://www.testcontainers.org/modules/databases/jdbc/) for more information
+| Item                           | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| URL format                     | `jdbc:tc:` instead of `jdbc:` for your database                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Ships with Flyway Command-line | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Maven Central coordinates      | Database specific JARs:  <br>`org.testcontainers:cockroachdb:jar`  <br>`org.testcontainers:db2:jar`  <br>`org.testcontainers:mariadb:jar`  <br>`org.testcontainers:mssqlserver:jar`  <br>`org.testcontainers:mysql:jar`  <br>`org.testcontainers:oracle-xe:jar`  <br>`org.testcontainers:postgresql:jar`  <br>`org.testcontainers:tidb:jar`  <br>`org.testcontainers:yugabytedb:jar`  <br>Dependencies:  <br>`org.testcontainers:jdbc:jar`  <br>`org.testcontainers:database-commons:jar`  <br>`org.testcontainers:testcontainers:jar` |
+| Supported versions             | `1.17.6`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Default Java class             | `org.testcontainers.jdbc.ContainerDatabaseDriver`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+
+- See the [Testcontainers documentation](https://www.testcontainers.org/modules/databases/jdbc/) for more information
 
 ### Compatibility
 
-- See [TestContainers list of supported databases](https://www.testcontainers.org/modules/databases/) to check if your chosen database is compatible
+- See [Testcontainers list of supported databases](https://www.testcontainers.org/modules/databases/) to check if your chosen database is compatible
 
 ### Example URL
 
@@ -71,4 +34,4 @@ jdbc:tc:postgresql:11-alpine://localhost:5432/databasename
 
 ## Limitations
 
-- If Flyway doesn't ship with a database driver for your chosen database, you will still need to provide one in order to use it with TestContainers. For example, if you want to connect to a DB2 database with TestContainers you will still need to provide a DB2 driver whose Maven Central coordinates are <code>com.ibm.db2.jcc:11.5.0.0</code>
+- If Flyway doesn't ship with a database driver for your chosen database, you will still need to provide one in order to use it with Testcontainers. For example, if you want to connect to a DB2 database with Testcontainers you will still need to provide a DB2 driver whose Maven Central coordinates are <code>com.ibm.db2.jcc:11.5.0.0</code>

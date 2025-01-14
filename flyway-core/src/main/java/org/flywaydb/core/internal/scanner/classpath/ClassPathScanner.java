@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.scanner.classpath;
 
@@ -60,10 +64,12 @@ public class ClassPathScanner<I> implements ResourceAndClassScanner<I> {
      */
     private final boolean throwOnMissingLocations;
 
+
     public ClassPathScanner(Class<I> implementedInterface, ClassLoader classLoader, Charset encoding, Location location,
                             ResourceNameCache resourceNameCache,
                             LocationScannerCache locationScannerCache,
-                            boolean throwOnMissingLocations) {
+                            boolean throwOnMissingLocations,
+                            boolean stream) {
         this.implementedInterface = implementedInterface;
         this.classLoader = classLoader;
         this.location = location;
@@ -75,7 +81,7 @@ public class ClassPathScanner<I> implements ResourceAndClassScanner<I> {
         for (Pair<String, String> resourceNameAndParentURL : findResourceNamesAndParentURLs()) {
             String resourceName = resourceNameAndParentURL.getLeft();
             String parentURL = resourceNameAndParentURL.getRight();
-            resources.add(new ClassPathResource(location, resourceName, classLoader, encoding, parentURL));
+            resources.add(new ClassPathResource(location, resourceName, classLoader, encoding, parentURL, stream));
             LOG.debug("Found resource: " + resourceNameAndParentURL.getLeft());
         }
     }
@@ -282,7 +288,7 @@ public class ClassPathScanner<I> implements ResourceAndClassScanner<I> {
      * @return The url resolver for this protocol.
      */
     private UrlResolver createUrlResolver(String protocol) {
-        if (new FeatureDetector(classLoader).isJBossVFSv2Available() && protocol.startsWith("vfs")) {
+        if (protocol.startsWith("vfs") && new FeatureDetector(classLoader).isJBossVFSv2Available()) {
             return new JBossVFSv2UrlResolver();
         }
 
@@ -316,13 +322,13 @@ public class ClassPathScanner<I> implements ResourceAndClassScanner<I> {
         }
 
         FeatureDetector featureDetector = new FeatureDetector(classLoader);
-        if (featureDetector.isJBossVFSv3Available() && "vfs".equals(protocol)) {
+        if ("vfs".equals(protocol) && featureDetector.isJBossVFSv3Available()) {
             JBossVFSv3ClassPathLocationScanner locationScanner = new JBossVFSv3ClassPathLocationScanner();
             locationScannerCache.put(protocol, locationScanner);
             resourceNameCache.put(locationScanner, new HashMap<>());
             return locationScanner;
         }
-        if (featureDetector.isOsgiFrameworkAvailable() && (isFelix(protocol) || isEquinox(protocol))) {
+        if ((isFelix(protocol) || isEquinox(protocol)) && featureDetector.isOsgiFrameworkAvailable()) {
             OsgiClassPathLocationScanner locationScanner = new OsgiClassPathLocationScanner();
             locationScannerCache.put(protocol, locationScanner);
             resourceNameCache.put(locationScanner, new HashMap<>());

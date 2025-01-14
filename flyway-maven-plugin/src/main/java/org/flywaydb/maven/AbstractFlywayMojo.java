@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-maven-plugin
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.maven;
 
@@ -285,6 +289,7 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
     private String[] sqlMigrationSuffixes;
 
     /**
+     * Deprecated, will be removed in a future release. <br>
      * Whether to automatically call clean or not when a validation error occurs. (default: {@code false})
      * <p>This is exclusively intended as a convenience for development. even though we strongly recommend not to
      * change migration scripts once they have been checked into SCM and run, this provides a way of dealing with this
@@ -339,7 +344,7 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
      * <ul>
      *     <li>auto: Auto detect the logger (default behavior)</li>
      *     <li>console: Use stdout/stderr (only available when using the CLI)</li>
-     *     <li>slf4j2: Use the slf4j2 logger</li>
+     *     <li>slf4j: Use the slf4j logger</li>
      *     <li>log4j2: Use the log4j2 logger</li>
      *     <li>apache-commons: Use the Apache Commons logger</li>
      * </ul>
@@ -363,7 +368,6 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
      * This should be used when you have applied a migration manually (via executing the sql yourself, or via an IDE), and
      * just want the schema history table to reflect this.
      * Use in conjunction with {@code cherryPick} to skip specific migrations instead of all pending ones.
-     * <i>Flyway Teams only</i>
      */
     @Parameter(property = ConfigUtils.SKIP_EXECUTING_MIGRATIONS)
     private Boolean skipExecutingMigrations;
@@ -379,10 +383,9 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
     /**
      * Ignore migrations that match this comma-separated list of patterns when validating migrations.
      * Each pattern is of the form <migration_type>:<migration_state>
-     * See https://flywaydb.org/documentation/configuration/parameters/ignoreMigrationPatterns for full details
+     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
      * Example: repeatable:missing,versioned:pending,*:failed
      * (default: *:future)
-     * <i>Flyway Teams only</i>
      */
     @Parameter
     private String[] ignoreMigrationPatterns;
@@ -588,50 +591,11 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
     private Boolean batch;
 
     /**
-     * Whether to Flyway's support for Oracle SQL*Plus commands should be activated. (default: {@code false})
-     *
-     * <i>Flyway Teams only</i>
-     * <p>Also configurable with Maven or System Property: ${flyway.oracle.sqlplus}</p>
-     */
-    @Parameter(property = ConfigUtils.ORACLE_SQLPLUS)
-    private Boolean oracleSqlplus;
-
-    /**
-     * Whether Flyway should issue a warning instead of an error whenever it encounters an Oracle SQL*Plus statement
-     * it doesn't yet support. (default: {@code false})
-     *
-     * <i>Flyway Teams only</i>
-     * <p>Also configurable with Maven or System Property: ${flyway.oracle.sqlplusWarn}</p>
-     */
-    @Parameter(property = ConfigUtils.ORACLE_SQLPLUS_WARN)
-    private Boolean oracleSqlplusWarn;
-
-    /**
-     * The location of your Oracle wallet, used to automatically sign in to your databases.
-     *
-     * <i>Flyway Teams only</i>
-     * <p>Also configurable with Maven or System Property: ${flyway.oracle.walletLocation}</p>
-     */
-    @Parameter(property = ConfigUtils.ORACLE_WALLET_LOCATION)
-    private String oracleWalletLocation;
-
-    /**
      * When connecting to a Kerberos service to authenticate, the path to the Kerberos config file.
      * <i>Flyway Teams only</i>
      */
     @Parameter(property = ConfigUtils.KERBEROS_CONFIG_FILE)
     private String kerberosConfigFile;
-
-    /**
-     * Your Flyway license key (FL01...). Not yet a Flyway Teams Edition customer?
-     * Request your <a href="https://flywaydb.org/download">Flyway trial license key</a>
-     * to try out Flyway Teams Edition features free for 30 days.
-     *
-     * <i>Flyway Teams only</i>
-     * <p>Also configurable with Maven or System Property: ${flyway.licenseKey}</p>
-     */
-    @Parameter(property = ConfigUtils.LICENSE_KEY)
-    private String licenseKey;
 
     /**
      * The encoding of the external config files specified with the {@code flyway.configFiles} property. (default: UTF-8).
@@ -820,7 +784,6 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
             putIfSet(conf, ConfigUtils.SKIP_EXECUTING_MIGRATIONS, skipExecutingMigrations);
             putIfSet(conf, ConfigUtils.OUTPUT_QUERY_RESULTS, outputQueryResults);
             putIfSet(conf, ConfigUtils.TARGET, target);
-            putArrayIfSet(conf, ConfigUtils.CHERRY_PICK, cherryPick);
             putArrayIfSet(conf, ConfigUtils.LOGGERS, loggers);
             putArrayIfSet(conf, ConfigUtils.IGNORE_MIGRATION_PATTERNS, ignoreMigrationPatterns);
             putIfSet(conf, ConfigUtils.VALIDATE_MIGRATION_NAMING, validateMigrationNaming);
@@ -841,13 +804,7 @@ abstract class AbstractFlywayMojo extends AbstractMojo {
             putIfSet(conf, ConfigUtils.STREAM, stream);
             putIfSet(conf, ConfigUtils.BATCH, batch);
 
-            putIfSet(conf, ConfigUtils.ORACLE_SQLPLUS, oracleSqlplus);
-            putIfSet(conf, ConfigUtils.ORACLE_SQLPLUS_WARN, oracleSqlplusWarn);
-            putIfSet(conf, ConfigUtils.ORACLE_WALLET_LOCATION, oracleWalletLocation);
-
             putIfSet(conf, ConfigUtils.KERBEROS_CONFIG_FILE, kerberosConfigFile);
-
-            putIfSet(conf, ConfigUtils.LICENSE_KEY, licenseKey);
 
             if (placeholders != null) {
                 for (String placeholder : placeholders.keySet()) {

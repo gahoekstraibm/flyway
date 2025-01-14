@@ -1,20 +1,26 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.database.base;
 
+import java.util.List;
+import java.util.Locale;
 import lombok.CustomLog;
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
@@ -35,13 +41,16 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import org.flywaydb.core.internal.util.StringUtils;
 
+import static org.flywaydb.core.internal.database.DatabaseTypeRegister.redactJdbcUrl;
 import static org.flywaydb.core.internal.sqlscript.SqlScriptMetadata.getMetadataResource;
 
 @CustomLog
 public abstract class BaseDatabaseType implements DatabaseType {
     // Don't grab semicolons and ampersands - they have special meaning in URLs
     private static final Pattern defaultJdbcCredentialsPattern = Pattern.compile("password=([^;&]*).*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern hostJdbcCredentialsPattern = Pattern.compile("(?:jdbc:)?[^:]+://[^:]+:([^@]+)@.*", Pattern.CASE_INSENSITIVE);
 
     /**
      * This is useful for databases that allow setting this in order to easily correlate individual application with
@@ -54,6 +63,15 @@ public abstract class BaseDatabaseType implements DatabaseType {
      */
     public abstract String getName();
 
+    /**
+     * @return The list of engine names and their aliases for this database. This corresponds to the optional database
+     * type property in the root of the flyway toml file.
+     */
+    @Override
+    public List<String> getSupportedEngines() {
+        return List.of(getName().replaceAll("\\s", ""));
+    }
+
     @Override
     public String toString() {
         return getName();
@@ -64,32 +82,15 @@ public abstract class BaseDatabaseType implements DatabaseType {
      */
     public abstract int getNullType();
 
-
-
-
-
-
+    @Override
+    public boolean supportsReadOnlyTransactions() {
+        return true;
+    }
 
     /**
      * Whether this database type should handle the given JDBC url.
      */
     public abstract boolean handlesJDBCUrl(String url);
-
-    /**
-     * When identifying database types, the priority with which this type will be used. High numbers indicate
-     * that this type will be used in preference to others.
-     */
-    public int getPriority() {
-        return 0;
-    }
-
-    /**
-     * When identifying database types, the priority with which this type will be used. This should return -1 if
-     * to be used in preference to the other type; +1 if the other should be used in preference to this.
-     */
-    public int compareTo(DatabaseType other) {
-        return other.getPriority() - this.getPriority();
-    }
 
     /**
      * A regex that identifies credentials in the JDBC URL, where they conform to a pattern specific to this database.
@@ -99,6 +100,16 @@ public abstract class BaseDatabaseType implements DatabaseType {
      */
     public Pattern getJDBCCredentialsPattern() {
         return defaultJdbcCredentialsPattern;
+    }
+
+    /**
+     * A list of regex patterns that identifies credentials in the JDBC URL, where they conform to a pattern specific to this database.
+     * The first captured group should represent the password text, so that it can be redacted if necessary.
+     *
+     * @return a list of URL regexes.
+     */
+    public List<Pattern> getJDBCCredentialsPatterns() {
+        return List.of(getJDBCCredentialsPattern(), hostJdbcCredentialsPattern);
     }
 
     /**
@@ -130,18 +141,6 @@ public abstract class BaseDatabaseType implements DatabaseType {
      */
     public abstract boolean handlesDatabaseProductNameAndVersion(String databaseProductName, String databaseProductVersion, Connection connection);
 
-    public Database createDatabase(Configuration configuration, boolean printInfo, JdbcConnectionFactory jdbcConnectionFactory, StatementInterceptor statementInterceptor) {
-        String databaseProductName = jdbcConnectionFactory.getProductName();
-        if (printInfo) {
-            LOG.info("Database: " + jdbcConnectionFactory.getJdbcUrl() + " (" + databaseProductName + ")");
-            LOG.debug("Driver  : " + jdbcConnectionFactory.getDriverInfo());
-        }
-
-        Database database = createDatabase(configuration, jdbcConnectionFactory, statementInterceptor);
-
-        return database;
-    }
-
     public abstract Database createDatabase(Configuration configuration, JdbcConnectionFactory jdbcConnectionFactory, StatementInterceptor statementInterceptor);
 
     public abstract Parser createParser(Configuration configuration, ResourceProvider resourceProvider, ParsingContext parsingContext);
@@ -154,16 +153,10 @@ public abstract class BaseDatabaseType implements DatabaseType {
     public SqlScriptExecutorFactory createSqlScriptExecutorFactory(final JdbcConnectionFactory jdbcConnectionFactory,
                                                                    final CallbackExecutor callbackExecutor,
                                                                    final StatementInterceptor statementInterceptor) {
-        boolean supportsBatch = false;
-
-
-
-
-        final boolean finalSupportsBatch = supportsBatch;
         final DatabaseType thisRef = this;
 
         return (connection, undo, batch, outputQueryResults) -> new DefaultSqlScriptExecutor(new JdbcTemplate(connection, thisRef),
-                                                                                             callbackExecutor, undo, finalSupportsBatch && batch, outputQueryResults, statementInterceptor);
+                                                                                             callbackExecutor, undo, jdbcConnectionFactory.isSupportsBatch() && batch, outputQueryResults, statementInterceptor);
     }
 
     public DatabaseExecutionStrategy createExecutionStrategy(java.sql.Connection connection) {
@@ -263,6 +256,4 @@ public abstract class BaseDatabaseType implements DatabaseType {
     public String instantiateClassExtendedErrorMessage() {
         return "";
     }
-
-    public void printMessages() {}
 }

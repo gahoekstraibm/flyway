@@ -8,7 +8,7 @@ redirect_from:
 # Tutorial: Undo Migrations
 {% include teams.html %}
 
-This tutorial assumes you have successfully completed the [**First Steps: Command-line**](Getting Started/First Steps/First Steps - Command-line.md)
+This tutorial assumes you have successfully completed the {% include quickstart-cli.html %}
 tutorial **If you have not done so, please do so first.** This tutorial picks up where that one left off.
 
 This brief tutorial will teach **how to use undo migrations**. It will take you through the
@@ -21,7 +21,7 @@ of the versioned migration with the same version. Undo migrations are optional a
 
 ## Reviewing the status
 
-After having completed the [First Steps: Command-line](Getting Started/First Steps/First Steps - Command-line.md), you can now execute
+After having completed the {% include quickstart-cli.html %}, you can now execute
 
 <pre class="console"><span>flyway-{{ site.flywayVersion }}&gt;</span> flyway <strong>info</strong></pre>
 
@@ -66,7 +66,7 @@ Database: Database: jdbc:h2:file:./foobardb (H2 1.4)
 | Versioned | 2       | Add people          | SQL  | 2017-12-17 20:01:13 | Success | Yes      |
 +-----------+---------+---------------------+------+---------------------+---------+----------+</pre>
 
-Note that both migrations have now been marked as being *undoable*.
+Note that both migrations have now been marked as being *undo-able*.
 
 ## Undoing the last migration
 

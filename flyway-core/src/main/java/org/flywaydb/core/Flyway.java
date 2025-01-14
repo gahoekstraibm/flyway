@@ -1,23 +1,35 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core;
 
+import static org.flywaydb.core.experimental.ExperimentalModeUtils.canUseExperimentalMode;
+import static org.flywaydb.core.internal.logging.PreviewFeatureWarning.logPreviewFeature;
+
+import java.lang.module.ModuleDescriptor.Version;
 import lombok.CustomLog;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import org.flywaydb.core.api.CoreErrorCode;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.MigrationInfoService;
+import org.flywaydb.core.api.callback.Callback;
 import org.flywaydb.core.api.callback.Event;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.flywaydb.core.api.configuration.Configuration;
@@ -26,21 +38,33 @@ import org.flywaydb.core.api.exception.FlywayValidateException;
 import org.flywaydb.core.api.logging.LogFactory;
 import org.flywaydb.core.api.output.*;
 import org.flywaydb.core.api.pattern.ValidatePattern;
-import org.flywaydb.core.extensibility.CommandExtension;
+import org.flywaydb.core.extensibility.ConfigurationExtension;
+import org.flywaydb.core.extensibility.EventTelemetryModel;
+import org.flywaydb.core.extensibility.LicenseGuard;
+import org.flywaydb.core.extensibility.VerbExtension;
 import org.flywaydb.core.internal.callback.CallbackExecutor;
 import org.flywaydb.core.internal.command.*;
 import org.flywaydb.core.internal.command.clean.DbClean;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Schema;
-import org.flywaydb.core.internal.license.FlywayTeamsUpgradeRequiredException;
 import org.flywaydb.core.internal.resolver.CompositeMigrationResolver;
 import org.flywaydb.core.internal.schemahistory.SchemaHistory;
+import org.flywaydb.core.internal.util.CommandExtensionUtils;
 import org.flywaydb.core.internal.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.flywaydb.core.internal.util.VersionUtils;
+
+
+
+
+
+
+
+
 
 /**
  * This is the centre point of Flyway, and for most users, the only class they will ever have to deal with.
@@ -58,6 +82,10 @@ import java.util.List;
 public class Flyway {
     private final ClassicConfiguration configuration;
     private final FlywayExecutor flywayExecutor;
+
+    @Deprecated
+    @Setter
+    private FlywayTelemetryManager flywayTelemetryManager;
 
     /**
      * This is your starting point. This creates a configuration which can be customized to your needs before being
@@ -101,8 +129,10 @@ public class Flyway {
      */
     public Flyway(Configuration configuration) {
         this.configuration = new ClassicConfiguration(configuration);
-        // Load callbacks from default package
-        this.configuration.loadCallbackLocation("db/callback", false);
+        List<Callback> callbacks = this.configuration.loadCallbackLocation("db/callback", false);
+        if (!callbacks.isEmpty()) {
+            this.configuration.setCallbacks(callbacks.toArray(new Callback[0]));
+        }
         this.flywayExecutor = new FlywayExecutor(this.configuration);
 
         LogFactory.setConfiguration(this.configuration);
@@ -112,7 +142,14 @@ public class Flyway {
      * @return The configuration that Flyway is using.
      */
     public Configuration getConfiguration() {
-        return new ClassicConfiguration(configuration);
+        return configuration;
+    }
+
+    /**
+     * @return The configuration extension type requested from the plugin register.
+     */
+    public <T extends ConfigurationExtension> T getConfigurationExtension(Class<T> configClass) {
+        return getConfiguration().getPluginRegister().getPlugin(configClass);
     }
 
     /**
@@ -124,61 +161,85 @@ public class Flyway {
      *
      * @throws FlywayException when the migration failed.
      */
+    @SneakyThrows
     public MigrateResult migrate() throws FlywayException {
-        return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
-            if (configuration.isValidateOnMigrate()) {
-                List<ValidatePattern> ignorePatterns = new ArrayList<>(Arrays.asList(configuration.getIgnoreMigrationPatterns()));
-                ignorePatterns.add(ValidatePattern.fromPattern("*:pending"));
-                ValidateResult validateResult = doValidate(database, migrationResolver, schemaHistory, defaultSchema, schemas, callbackExecutor, ignorePatterns.toArray(new ValidatePattern[0]));
-                if (!validateResult.validationSuccessful && !configuration.isCleanOnValidationError()) {
-                    throw new FlywayValidateException(validateResult.errorDetails, validateResult.getAllErrorMessages());
+        try (EventTelemetryModel telemetryModel = new EventTelemetryModel("migrate", flywayTelemetryManager)) {
+            if (canUseExperimentalMode(configuration, "migrate")) {
+                logPreviewFeature("ExperimentalMigrate");
+                final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("migrate")).findFirst();
+                if (verb.isPresent()) {
+                    return (MigrateResult) verb.get().executeVerb(configuration, flywayTelemetryManager);
+                } else {
+                    LOG.warn("Experimental mode for migrate is set but no verb is present");
                 }
             }
 
-            if (configuration.isCreateSchemas()) {
-                new DbSchemas(database, schemas, schemaHistory, callbackExecutor).create(false);
-            } else if (!defaultSchema.exists()) {
-                LOG.warn("The configuration option 'createSchemas' is false.\n" +
-                                 "However, the schema history table still needs a schema to reside in.\n" +
-                                 "You must manually create a schema for the schema history table to reside in.\n" +
-                                 "See https://flywaydb.org/documentation/concepts/migrations.html#the-createschemas-option-and-the-schema-history-table");
-            }
-
-            if (!schemaHistory.exists()) {
-                List<Schema> nonEmptySchemas = new ArrayList<>();
-                for (Schema schema : schemas) {
-                    if (schema.exists() && !schema.empty()) {
-                        nonEmptySchemas.add(schema);
-                    }
-                }
-
-                if (!nonEmptySchemas.isEmpty()
+            try {
+                return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
 
 
 
-                ) {
-                    if (configuration.isBaselineOnMigrate()) {
-                        doBaseline(schemaHistory, callbackExecutor, database);
-                    } else {
-                        // Second check for MySQL which is sometimes flaky otherwise
-                        if (!schemaHistory.exists()) {
-                            throw new FlywayException("Found non-empty schema(s) "
-                                                              + StringUtils.collectionToCommaDelimitedString(nonEmptySchemas)
-                                                              + " but no schema history table. Use baseline()"
-                                                              + " or set baselineOnMigrate to true to initialize the schema history table.");
+
+
+
+
+                    if (configuration.isValidateOnMigrate()) {
+                        List<ValidatePattern> ignorePatterns = new ArrayList<>(Arrays.asList(configuration.getIgnoreMigrationPatterns()));
+                        ignorePatterns.add(ValidatePattern.fromPattern("*:pending"));
+                        ValidateResult validateResult = doValidate(database, migrationResolver, schemaHistory, defaultSchema, schemas, callbackExecutor, ignorePatterns.toArray(new ValidatePattern[0]));
+                        if (!validateResult.validationSuccessful) {
+                            throw new FlywayValidateException(validateResult.errorDetails, validateResult.getAllErrorMessages());
                         }
                     }
-                }
 
-                schemaHistory.create(false);
+                    if (configuration.isCreateSchemas()) {
+                        new DbSchemas(database, schemas, schemaHistory, callbackExecutor).create(false);
+                    } else if (!defaultSchema.exists()) {
+                        LOG.warn("The configuration option 'createSchemas' is false.\n" +
+                                         "However, the schema history table still needs a schema to reside in.\n" +
+                                         "You must manually create a schema for the schema history table to reside in.\n" +
+                                         "See https://documentation.red-gate.com/fd/migrations-184127470.html");
+                    }
+
+                    if (!schemaHistory.exists()) {
+                        List<Schema> nonEmptySchemas = new ArrayList<>();
+                        for (Schema schema : schemas) {
+                            if (schema.exists() && !schema.empty()) {
+                                nonEmptySchemas.add(schema);
+                            }
+                        }
+
+                        if (!nonEmptySchemas.isEmpty() && !configuration.isSkipExecutingMigrations()) {
+                            if (configuration.isBaselineOnMigrate()) {
+                                doBaseline(schemaHistory, callbackExecutor, database);
+
+
+
+                            } else {
+                                // Second check for MySQL which is sometimes flaky otherwise
+                                if (!schemaHistory.exists()) {
+                                    throw new FlywayException("Found non-empty schema(s) "
+                                                                      + StringUtils.collectionToCommaDelimitedString(nonEmptySchemas)
+                                                                      + " but no schema history table. Use baseline()"
+                                                                      + " or set baselineOnMigrate to true to initialize the schema history table.", CoreErrorCode.NON_EMPTY_SCHEMA_WITHOUT_SCHEMA_HISTORY_TABLE);
+                                }
+                            }
+                        }
+
+                        schemaHistory.create(false);
+                    }
+
+                    MigrateResult result = new DbMigrate(database, schemaHistory, defaultSchema, migrationResolver, configuration, callbackExecutor).migrate();
+
+                    callbackExecutor.onOperationFinishEvent(Event.AFTER_MIGRATE_OPERATION_FINISH, result);
+
+                    return result;
+                }, true, flywayTelemetryManager);
+            } catch (Exception e) {
+                telemetryModel.setException(e);
+                throw e;
             }
-
-            MigrateResult result = new DbMigrate(database, schemaHistory, defaultSchema, migrationResolver, configuration, callbackExecutor).migrate();
-
-            callbackExecutor.onOperationFinishEvent(Event.AFTER_MIGRATE_OPERATION_FINISH, result);
-
-            return result;
-        }, true);
+        }
     }
 
     /**
@@ -191,13 +252,22 @@ public class Flyway {
      * @throws FlywayException when the info retrieval failed.
      */
     public MigrationInfoService info() {
+        if (canUseExperimentalMode(configuration, "info")) {
+            logPreviewFeature("ExperimentalInfo");
+            final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("info")).findFirst();
+            if (verb.isPresent()) {
+                return (MigrationInfoService) verb.get().executeVerb(configuration, flywayTelemetryManager);
+            } else {
+                LOG.warn("Experimental mode for info is set but no verb is present");
+            }
+        }
         return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
             MigrationInfoService migrationInfoService = new DbInfo(migrationResolver, schemaHistory, configuration, database, callbackExecutor, schemas).info();
 
             callbackExecutor.onOperationFinishEvent(Event.AFTER_INFO_OPERATION_FINISH, migrationInfoService.getInfoResult());
 
             return migrationInfoService;
-        }, true);
+        }, true, flywayTelemetryManager);
     }
 
     /**
@@ -209,14 +279,36 @@ public class Flyway {
      *
      * @throws FlywayException when the clean fails.
      */
+    @SneakyThrows
     public CleanResult clean() {
-        return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
-            CleanResult cleanResult = doClean(database, schemaHistory, defaultSchema, schemas, callbackExecutor);
+        try (EventTelemetryModel telemetryModel = new EventTelemetryModel("clean", flywayTelemetryManager)) {
+            if (canUseExperimentalMode(configuration, "clean")) {
+                logPreviewFeature("ExperimentalClean");
+                final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("clean")).findFirst();
+                if (verb.isPresent()) {
+                    return (CleanResult) verb.get().executeVerb(configuration, flywayTelemetryManager);
+                } else {
+                    LOG.warn("Experimental mode for clean is set but no verb is present");
+                }
+            }
 
-            callbackExecutor.onOperationFinishEvent(Event.AFTER_CLEAN_OPERATION_FINISH, cleanResult);
+            try {
+                return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
+                    CleanResult cleanResult = doClean(database, schemaHistory, defaultSchema, schemas, callbackExecutor);
 
-            return cleanResult;
-        }, false);
+
+
+
+
+                    callbackExecutor.onOperationFinishEvent(Event.AFTER_CLEAN_OPERATION_FINISH, cleanResult);
+
+                    return cleanResult;
+                }, false, flywayTelemetryManager);
+            } catch (Exception e) {
+                telemetryModel.setException(e);
+                throw e;
+            }
+        }
     }
 
     /**
@@ -231,22 +323,14 @@ public class Flyway {
      *
      * <img src="https://flywaydb.org/assets/balsamiq/command-validate.png" alt="validate">
      *
-     * @throws FlywayException when the validation failed.
+     * @throws FlywayException when something went wrong during validation.
+     * @throws FlywayValidateException when the validation failed.
      */
     public void validate() throws FlywayException {
-        flywayExecutor.execute((FlywayExecutor.Command<Void>) (migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
-            ValidateResult validateResult = doValidate(database, migrationResolver, schemaHistory, defaultSchema, schemas, callbackExecutor, configuration.getIgnoreMigrationPatterns());
-
-            callbackExecutor.onOperationFinishEvent(Event.AFTER_VALIDATE_OPERATION_FINISH, validateResult);
-
-            LOG.notice("Automate migration testing for Database CI with Flyway Hub. Visit https://flywaydb.org/get-started-with-hub");
-
-            if (!validateResult.validationSuccessful && !configuration.isCleanOnValidationError()) {
-                throw new FlywayValidateException(validateResult.errorDetails, validateResult.getAllErrorMessages());
-            }
-
-            return null;
-        }, true);
+        final ValidateResult validateResult = validateWithResult();
+        if (!validateResult.validationSuccessful) {
+            throw new FlywayValidateException(validateResult.errorDetails, validateResult.getAllErrorMessages());
+        }
     }
 
     /**
@@ -263,16 +347,25 @@ public class Flyway {
      *
      * @return An object summarising the validation results
      *
-     * @throws FlywayException when the validation failed.
+     * @throws FlywayException when something went wrong during validation.
      */
     public ValidateResult validateWithResult() throws FlywayException {
+        if (canUseExperimentalMode(configuration, "validate")) {
+            logPreviewFeature("ExperimentalValidate");
+            final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("validate")).findFirst();
+            if (verb.isPresent()) {
+                return (ValidateResult) verb.get().executeVerb(configuration, flywayTelemetryManager);
+            } else {
+                LOG.warn("Experimental mode for validate is set but no verb is present");
+            }
+        }
         return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
             ValidateResult validateResult = doValidate(database, migrationResolver, schemaHistory, defaultSchema, schemas, callbackExecutor, configuration.getIgnoreMigrationPatterns());
 
             callbackExecutor.onOperationFinishEvent(Event.AFTER_VALIDATE_OPERATION_FINISH, validateResult);
 
             return validateResult;
-        }, true);
+        }, true, flywayTelemetryManager);
     }
 
     /**
@@ -284,23 +377,45 @@ public class Flyway {
      *
      * @throws FlywayException when the schema baseline failed.
      */
+    @SneakyThrows
     public BaselineResult baseline() throws FlywayException {
-        return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
-            if (configuration.isCreateSchemas()) {
-                new DbSchemas(database, schemas, schemaHistory, callbackExecutor).create(true);
-            } else {
-                LOG.warn("The configuration option 'createSchemas' is false.\n" +
-                                 "Even though Flyway is configured not to create any schemas, the schema history table still needs a schema to reside in.\n" +
-                                 "You must manually create a schema for the schema history table to reside in.\n" +
-                                 "See https://flywaydb.org/documentation/concepts/migrations.html#the-createschemas-option-and-the-schema-history-table");
+        try (EventTelemetryModel telemetryModel = new EventTelemetryModel("baseline", flywayTelemetryManager)) {
+            if (canUseExperimentalMode(configuration, "baseline")) {
+                logPreviewFeature("ExperimentalBaseline");
+                final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("baseline")).findFirst();
+                if (verb.isPresent()) {
+                    return (BaselineResult) verb.get().executeVerb(configuration, flywayTelemetryManager);
+                } else {
+                    LOG.warn("Experimental mode for baseline is set but no verb is present");
+                }
             }
 
-            BaselineResult baselineResult = doBaseline(schemaHistory, callbackExecutor, database);
+            try {
+                return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
+                    if (configuration.isCreateSchemas()) {
+                        new DbSchemas(database, schemas, schemaHistory, callbackExecutor).create(true);
+                    } else {
+                        LOG.warn("The configuration option 'createSchemas' is false.\n" +
+                                         "Even though Flyway is configured not to create any schemas, the schema history table still needs a schema to reside in.\n" +
+                                         "You must manually create a schema for the schema history table to reside in.\n" +
+                                         "See https://documentation.red-gate.com/fd/migrations-184127470.html");
+                    }
 
-            callbackExecutor.onOperationFinishEvent(Event.AFTER_BASELINE_OPERATION_FINISH, baselineResult);
+                    BaselineResult baselineResult = doBaseline(schemaHistory, callbackExecutor, database);
 
-            return baselineResult;
-        }, false);
+
+
+
+
+                    callbackExecutor.onOperationFinishEvent(Event.AFTER_BASELINE_OPERATION_FINISH, baselineResult);
+
+                    return baselineResult;
+                }, false, flywayTelemetryManager);
+            } catch (Exception e) {
+                telemetryModel.setException(e);
+                throw e;
+            }
+        }
     }
 
     /**
@@ -315,14 +430,36 @@ public class Flyway {
      *
      * @throws FlywayException when the schema history table repair failed.
      */
+    @SneakyThrows
     public RepairResult repair() throws FlywayException {
-        return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
-            RepairResult repairResult = new DbRepair(database, migrationResolver, schemaHistory, callbackExecutor, configuration).repair();
+        try (EventTelemetryModel telemetryModel = new EventTelemetryModel("repair", flywayTelemetryManager)) {
+            if (canUseExperimentalMode(configuration, "repair")) {
+                logPreviewFeature("ExperimentalRepair");
+                final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("repair")).findFirst();
+                if (verb.isPresent()) {
+                    return (RepairResult) verb.get().executeVerb(configuration, flywayTelemetryManager);
+                } else {
+                    LOG.warn("Experimental mode for repair is set but no verb is present");
+                }
+            }
 
-            callbackExecutor.onOperationFinishEvent(Event.AFTER_REPAIR_OPERATION_FINISH, repairResult);
+            try {
+                return flywayExecutor.execute((migrationResolver, schemaHistory, database, defaultSchema, schemas, callbackExecutor, statementInterceptor) -> {
+                    RepairResult repairResult = new DbRepair(database, migrationResolver, schemaHistory, callbackExecutor, configuration).repair();
 
-            return repairResult;
-        }, true);
+
+
+
+
+                    callbackExecutor.onOperationFinishEvent(Event.AFTER_REPAIR_OPERATION_FINISH, repairResult);
+
+                    return repairResult;
+                }, true, flywayTelemetryManager);
+            } catch (Exception e) {
+                telemetryModel.setException(e);
+                throw e;
+            }
+        }
     }
 
     /**
@@ -336,23 +473,30 @@ public class Flyway {
      *
      * @throws FlywayException when undo failed.
      */
-    public UndoResult undo() throws FlywayException {
-        try {
-            return (UndoResult) runCommand("undo", Collections.emptyList());
-        } catch (FlywayException e) {
-            if (e.getMessage().startsWith("No command extension found")) {
-                throw new FlywayException("The command 'undo' was not recognized. Make sure you have added 'flyway-proprietary' as a dependency.", e);
+    public OperationResult undo() throws FlywayException {
+        try (EventTelemetryModel telemetryModel = new EventTelemetryModel("undo", flywayTelemetryManager)) {
+            if (canUseExperimentalMode(configuration, "undo")) {
+                logPreviewFeature("ExperimentalUndo");
+                final var verb = configuration.getPluginRegister().getPlugins(VerbExtension.class).stream().filter(verbExtension -> verbExtension.handlesVerb("undo")).findFirst();
+                if (verb.isPresent()) {
+                    return (OperationResult) verb.get().executeVerb(configuration, flywayTelemetryManager);
+                } else {
+                    LOG.warn("Experimental mode for undo is set but no verb is present");
+                }
             }
-            throw e;
+            try {
+                return runCommand("undo", Collections.emptyList());
+            } catch (FlywayException e) {
+                if (e.getMessage().startsWith("No command extension found")) {
+                    throw new FlywayException("The command 'undo' was not recognized. Make sure you have added 'flyway-proprietary' as a dependency.", e);
+                }
+                throw e;
+            }
         }
     }
 
     private OperationResult runCommand(String command, List<String> flags) {
-        return configuration.getPluginRegister().getPlugins(CommandExtension.class).stream()
-                            .filter(commandExtension -> commandExtension.handlesCommand(command))
-                            .findFirst()
-                            .map(commandExtension -> commandExtension.handle(command, configuration, flags))
-                            .orElseThrow(() -> new FlywayException("No command extension found to handle command: " + command));
+        return CommandExtensionUtils.runCommandExtension(configuration, command, flags, flywayTelemetryManager);
     }
 
     private CleanResult doClean(Database database, SchemaHistory schemaHistory, Schema defaultSchema, Schema[] schemas, CallbackExecutor callbackExecutor) {
@@ -363,10 +507,9 @@ public class Flyway {
                                       Schema defaultSchema, Schema[] schemas, CallbackExecutor callbackExecutor, ValidatePattern[] ignorePatterns) {
         ValidateResult validateResult = new DbValidate(database, schemaHistory, defaultSchema, migrationResolver, configuration, callbackExecutor, ignorePatterns).validate();
 
-        if (!validateResult.validationSuccessful && configuration.isCleanOnValidationError()) {
-            doClean(database, schemaHistory, defaultSchema, schemas, callbackExecutor);
+        if (configuration.isCleanOnValidationError()) {
+            throw new FlywayException("cleanOnValidationError has been removed");
         }
-
         return validateResult;
     }
 

@@ -14,13 +14,9 @@ One or more of the following flags must be set, which determine what the report 
  - `-changes` produces a report of all the changes that will be applied to the schema in the next migration.
  - `-drift` produces a report showing objects in the schema which are not the result of any of the currently applied migrations, i.e. changes made outside of Flyway.
 
-More information can be found on [the check command page](Commands/check).
+More information can be found on [the check command page](Commands/check-command).
 
 This tutorial exemplifies the scenario where you have access to both your target DB (`url`) and a build DB (`buildUrl`).
-
-## Install prerequisites
-
-Flyway Check requires .Net 6 so make sure you have this installed. You can download it from [here](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
 ## Download the latest version of Flyway Enterprise CLI
 
@@ -37,7 +33,7 @@ In this example, there are two databases in our SQL Server instance: `foobar` (t
 
 ## Configuration
 
-As well as the usual config parameters (`flyway.url`, `flyway.user`, `flyway.password`, `flyway.licenseKey`...), we also need to configure properties specific to the `check` command (see [the documentation](Commands/check) for more details). In this case, we only need to configure `flyway.check.buildUrl` and `flyway.check.reportFilename` as the other properties all have suitable default values.
+As well as the usual config parameters (`flyway.url`, `flyway.user`, `flyway.password`, `flyway.licenseKey`...), we also need to configure properties specific to the `check` command (see [the documentation](Commands/check-command) for more details). In this case, we only need to configure `flyway.check.buildUrl` and `flyway.reportFilename` as the other properties all have suitable default values.
 
 Our `flyway.conf` file (found in the `conf` folder), should contain the following values:
 
@@ -45,10 +41,9 @@ Our `flyway.conf` file (found in the `conf` folder), should contain the followin
 flyway.url=jdbc:sqlserver://localhost;databaseName=foobar;trustServerCertificate=true
 flyway.user=sa
 flyway.password=Flyway123
-flyway.licenseKey=<put your license key here>
 
 flyway.check.buildUrl=jdbc:sqlserver://localhost;databaseName=check_build_db;trustServerCertificate=true
-flyway.check.reportFilename=check_report
+flyway.reportFilename=check_report
 ```
 
 ## Setting up migrations
@@ -69,19 +64,19 @@ Before we run `migrate`, we can use `check` to generate a change report by runni
 
 ## Viewing the report output
 
-Having run the command, we can see that Flyway has generated HTML and JSON versions of the `check` report in the working directory. Opening `check_report.html` in a browser, we can clearly see what objects will change in our target schema as a result of running our pending migration(s), expressed in the form of SQL queries. The JSON report contains the same information but in a more machine-readable format.
+Having run the command, we can see that Flyway has generated HTML and JSON versions of the `check` report in the working directory. Opening `check_report.html` in a browser, we can clearly see what objects will change in our target schema as a result of running our pending migrations, expressed in the form of SQL queries. The JSON report contains the same information but in a more machine-readable format.
 
 <p align="center"><img src="assets/change-report-example.png" style="max-width: 100%"/></p>
 
 ## Applying the changes
 
-We now know that applying our pending migration(s) will have the intended effect on our target schema, so we can go ahead and apply them using `migrate`:
+We now know that applying our pending migrations will have the intended effect on our target schema, so we can go ahead and apply them using `migrate`:
 
 <pre class="console">./flyway migrate</pre>
 
 ## Detecting drift using `-drift` flag
 
-Before applying future migrations, we might also want to confirm that no drift has occured in the target database, i.e. all schema changes have been applied in the form of flyway migrations, as oppose to unrecorded manual changes.
+Before applying future migrations, we might also want to confirm that no drift has occurred in the target database, i.e. all schema changes have been applied in the form of flyway migrations, as oppose to unrecorded manual changes.
 
 To demonstrate this, we can apply a manual change to the target database, e.g. using SSMS:
 
@@ -139,10 +134,9 @@ Inside `conf`, place a file called `flyway.conf` and add the following contents:
 flyway.url=jdbc:sqlserver://localhost;databaseName=foobar;trustServerCertificate=true
 flyway.user=sa
 flyway.password=Flyway123
-flyway.licenseKey=<put your license key here>
 
 flyway.check.buildUrl=jdbc:sqlserver://localhost;databaseName=check_build_db;trustServerCertificate=true
-flyway.check.reportFilename=reports/check_report
+flyway.reportFilename=reports/check_report
 ```
 
 ### Running `check` in Docker
@@ -166,9 +160,10 @@ version: '3'
 services:
   flyway:
     image: redgate/flyway
-    command: -url=jdbc:sqlserver://db;trustServerCertificate=true -check.buildUrl=jdbc:sqlserver://db;databaseName=check_build_db;trustServerCertificate=true -password=Flyway123 -user=sa -check.reportFilename=reports/check_report check -changes
+    command: -url=jdbc:sqlserver://db;trustServerCertificate=true -check.buildUrl=jdbc:sqlserver://db;databaseName=check_build_db;trustServerCertificate=true -password=Flyway123 -user=sa -reportFilename=reports/check_report check -changes
     environment:
-      - FLYWAY_LICENSE_KEY=<put your license key here>
+      - FLYWAY_EMAIL=<put your PAT email here>
+      - FLYWAY_TOKEN=<put your PAT here>
     volumes:
       - ./sql:/flyway/sql
       - ./reports:/flyway/reports

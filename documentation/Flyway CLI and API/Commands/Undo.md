@@ -3,7 +3,7 @@ subtitle: Undo
 ---
 # Undo
 
-<a style="text-decoration: none; background: rgb(204,0,0); padding: 6px 40px; border-radius: 10px; color: white; font-weight: bold;" href="https://flywaydb.org/try-flyway-teams-edition">Get Undo in Flyway Teams</a>
+{% include teams.html %}
 
 Undoes the most recently applied versioned migration.
 
@@ -13,15 +13,7 @@ Undoes the most recently applied versioned migration.
 {% include commandUsage.html command="Undo" %}
 <br/>
 
-API users will need to include `flyway-proprietary` as a dependency in order to use `undo`. For example:
-
-```
-<dependency>
-    <groupId>org.flywaydb.enterprise</groupId>
-    <artifactId>flyway-proprietary</artifactId>
-    <version>{{ site.flywayVersion }}</version>
-</dependency>
-```
+API/Maven/Gradle users will need to include `flyway-proprietary` as a dependency in order to use `undo`. See [API (Java)](Usage/API Java)
 
 ## Description
 
@@ -53,4 +45,4 @@ structure, and once it is tested and proven to work, no migration script can bre
 if your infrastructure supports this, we recommend using the snapshot technology of your underlying storage solution. 
 Especially for larger data volumes, this can be several orders of magnitude faster than traditional backups and restores.
 
-<a style="text-decoration: none; background: rgb(204,0,0); padding: 6px 40px; border-radius: 10px; color: white; font-weight: bold;" href="https://flywaydb.org/try-flyway-teams-edition">Get Undo in Flyway Teams</a>
+

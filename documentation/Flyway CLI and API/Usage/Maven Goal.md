@@ -5,10 +5,49 @@ redirect_from: /documentation/maven/
 ---
 # Maven Plugin
 
-The Flyway Maven plugin supports **Maven 3.x** running on **Java 8**, **Java 9**, **Java 10**, **Java 11** or **Java 12**.
+The Flyway Maven plugin supports **Maven 3.x** running on **Java 17**.
 
 ## Installation
-### Community Edition
+
+### Flyway Community Edition
+This includes Teams & Enterprise features subject to license.
+
+<code>pom.xml</code>
+<table class="table">
+    <tr>
+        <td>
+            <pre class="prettyprint">&lt;pluginRepositories&gt;
+    ...
+    &lt;pluginRepository&gt;
+        &lt;id&gt;redgate&lt;/id&gt;
+        &lt;url&gt;https://download.red-gate.com/maven/release&lt;/url&gt;
+    &lt;/pluginRepository&gt;
+    ...
+&lt;/pluginRepositories&gt;
+&lt;build&gt;
+    ...
+    &lt;plugin&gt;
+        &lt;groupId&gt;<strong>com.redgate.flyway</strong>&lt;/groupId&gt;
+        &lt;artifactId&gt;flyway-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;{{ site.flywayVersion }}&lt;/version&gt;
+    &lt;/plugin&gt;
+    ...
+&lt;/build&gt;</pre>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            By downloading Flyway Community Maven Plugin you confirm that you have read and agree to the terms of the <a href="https://www.red-gate.com/assets/purchase/assets/subscription-license.pdf?_ga=2.265045707.556964523.1656332792-1685764737.1620948215">Redgate EULA</a>.
+        </td>
+    </tr>
+</table>
+
+Please note, the `groupId` changed at Flyway V10.0.0 from `org.flywaydb.enterprise` to `com.redgate.flyway` and published as a convenience in both locations up till Flyway V10.22.0
+
+For older versions see [Accessing Older Versions of Flyway Engine](https://documentation.red-gate.com/flyway/release-notes-and-older-versions/accessing-older-versions-of-flyway-engine)
+
+
+### Open Source Edition
 
 <code>pom.xml</code>
 
@@ -28,41 +67,7 @@ The Flyway Maven plugin supports **Maven 3.x** running on **Java 8**, **Java 9**
     </tr>
 </table>
 
-### Teams Edition
 
-<code>pom.xml</code>
-<table class="table">
-    <tr>
-        <td>
-            <pre class="prettyprint">&lt;pluginRepositories&gt;
-    ...
-    &lt;pluginRepository&gt;
-        &lt;id&gt;redgate&lt;/id&gt;
-        &lt;url&gt;https://download.red-gate.com/maven/release&lt;/url&gt;
-    &lt;/pluginRepository&gt;
-    ...
-&lt;/pluginRepositories&gt;
-&lt;build&gt;
-    ...
-    &lt;plugin&gt;
-        &lt;groupId&gt;org.flywaydb<strong>.enterprise</strong>&lt;/groupId&gt;
-        &lt;artifactId&gt;flyway-maven-plugin&lt;/artifactId&gt;
-        &lt;version&gt;{{ site.flywayVersion }}&lt;/version&gt;
-    &lt;/plugin&gt;
-    ...
-&lt;/build&gt;</pre>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            By downloading Flyway Teams/Enterprise Maven Plugin you confirm that you have read and agree to the terms of the <a href="https://www.red-gate.com/assets/purchase/assets/subscription-license.pdf?_ga=2.265045707.556964523.1656332792-1685764737.1620948215">Redgate EULA</a>.
-        </td>
-    </tr>
-</table>
-
-<p class="note">
-  For older versions see <a href="/Accessing Older Versions of Flyway">Accessing Older Versions of Flyway</a>
-</p>
 
 ## Goals
 <table class="table table-bordered table-hover">

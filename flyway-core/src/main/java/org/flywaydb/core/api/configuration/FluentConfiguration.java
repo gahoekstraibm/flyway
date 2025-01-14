@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.api.configuration;
 
@@ -23,6 +27,8 @@ import org.flywaydb.core.api.migration.JavaMigration;
 import org.flywaydb.core.api.pattern.ValidatePattern;
 import org.flywaydb.core.api.resolver.MigrationResolver;
 import org.flywaydb.core.internal.configuration.ConfigUtils;
+import org.flywaydb.core.internal.configuration.models.EnvironmentModel;
+import org.flywaydb.core.internal.configuration.resolvers.ProvisionerMode;
 import org.flywaydb.core.internal.util.ClassUtils;
 
 import javax.sql.DataSource;
@@ -37,7 +43,6 @@ import java.util.Properties;
  * This configuration can be passed to Flyway using the <code>new Flyway(Configuration)</code> constructor.
  */
 public class FluentConfiguration implements Configuration {
-
     @Delegate(types = Configuration.class)
     private final ClassicConfiguration config;
 
@@ -107,6 +112,41 @@ public class FluentConfiguration implements Configuration {
         return this;
     }
 
+    public FluentConfiguration reportFilename(String reportFilename) {
+        config.setReportFilename(reportFilename);
+        return this;
+    }
+
+    public FluentConfiguration environment(String environment) {
+        config.setEnvironment(environment);
+        return this;
+    }
+
+    public FluentConfiguration allEnvironments(Map<String, EnvironmentModel> environments) {
+        config.setAllEnvironments(environments);
+        return this;
+    }
+
+    public FluentConfiguration provisionMode(ProvisionerMode mode) {
+        config.setProvisionMode(mode);
+        return this;
+    }
+
+    // Backwards compatible alias for provisionMode
+    public FluentConfiguration environmentProvisionMode(ProvisionerMode mode) {
+        return provisionMode(mode);
+    }
+
+    public FluentConfiguration workingDirectory(String workingDirectory) {
+        config.setWorkingDirectory(workingDirectory);
+        return this;
+    }
+
+    public FluentConfiguration clearCachedResolvedEnvironment(String environmentName) {
+        config.requestResolvedEnvironmentRefresh(environmentName);
+        return this;
+    }
+
     /**
      * Rules for the built-in error handler that let you override specific SQL states and errors codes in order to force
      * specific errors or warnings to be treated as debug messages, info messages, warnings or errors.
@@ -166,7 +206,7 @@ public class FluentConfiguration implements Configuration {
      * <ul>
      *     <li>auto: Auto detect the logger (default behavior)</li>
      *     <li>console: Use stdout/stderr (only available when using the CLI)</li>
-     *     <li>slf4j2: Use the slf4j2 logger</li>
+     *     <li>slf4j: Use the slf4j logger</li>
      *     <li>log4j2: Use the log4j2 logger</li>
      *     <li>apache-commons: Use the Apache Commons logger</li>
      * </ul>
@@ -198,9 +238,8 @@ public class FluentConfiguration implements Configuration {
     /**
      * Ignore migrations that match this comma-separated list of patterns when validating migrations.
      * Each pattern is of the form <migration_type>:<migration_state>
-     * See https://flywaydb.org/documentation/configuration/parameters/ignoreMigrationPatterns for full details
+     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
      * Example: repeatable:missing,versioned:pending,*:failed
-     * <i>Flyway Teams only</i>
      */
     public FluentConfiguration ignoreMigrationPatterns(String... ignoreMigrationPatterns) {
         config.setIgnoreMigrationPatterns(ignoreMigrationPatterns);
@@ -209,8 +248,7 @@ public class FluentConfiguration implements Configuration {
 
     /**
      * Ignore migrations that match this array of ValidatePatterns when validating migrations.
-     * See https://flywaydb.org/documentation/configuration/parameters/ignoreMigrationPatterns for full details
-     * <i>Flyway Teams only</i>
+     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
      */
     public FluentConfiguration ignoreMigrationPatterns(ValidatePattern... ignoreMigrationPatterns) {
         config.setIgnoreMigrationPatterns(ignoreMigrationPatterns);
@@ -265,6 +303,17 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
+     * Whether to disable community database support.
+     * This is especially useful for production environments where using community databases is undesirable.
+     *
+     * @param communityDBSupportEnabled {@code true} to disable community database support. {@code false} to be able to use community database support. (default: {@code false})
+     */
+    public FluentConfiguration communityDBSupportEnabled(boolean communityDBSupportEnabled) {
+        config.setCommunityDBSupportEnabled(communityDBSupportEnabled);
+        return this;
+    }
+
+    /**
      * Sets the locations to scan recursively for migrations.
      * The location type is determined by its prefix.
      * Unprefixed locations or locations starting with {@code classpath:} point to a package on the classpath and may
@@ -313,6 +362,17 @@ public class FluentConfiguration implements Configuration {
         config.setEncoding(encoding);
         return this;
     }
+
+    /**
+     * Sets whether SQL should be executed within a transaction.
+     *
+     * @param executeInTransaction {@code true} to enable execution of SQL in a transaction, {@code false} otherwise
+     */
+    public FluentConfiguration executeInTransaction(boolean executeInTransaction) {
+        config.setExecuteInTransaction(executeInTransaction);
+        return this;
+    }
+
 
     /**
      * Whether Flyway should try to automatically detect SQL migration file encoding
@@ -422,27 +482,6 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
-     * Gets the migrations that Flyway should consider when migrating or undoing. Leave empty to consider all available migrations.
-     * Migrations not in this list will be ignored.
-     * <i>Flyway Teams only</i>
-     */
-    public FluentConfiguration cherryPick(MigrationPattern... cherryPick) {
-        config.setCherryPick(cherryPick);
-        return this;
-    }
-
-    /**
-     * Gets the migrations that Flyway should consider when migrating or undoing. Leave empty to consider all available migrations.
-     * Migrations not in this list will be ignored.
-     * Values should be the version for versioned migrations (e.g. 1, 2.4, 6.5.3) or the description for repeatable migrations (e.g. Insert_Data, Create_Table)
-     * <i>Flyway Teams only</i>
-     */
-    public FluentConfiguration cherryPick(String... cherryPickAsString) {
-        config.setCherryPick(cherryPickAsString);
-        return this;
-    }
-
-    /**
      * Sets whether placeholders should be replaced.
      *
      * @param placeholderReplacement Whether placeholders should be replaced. (default: true)
@@ -521,20 +560,6 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration sqlMigrationPrefix(String sqlMigrationPrefix) {
         config.setSqlMigrationPrefix(sqlMigrationPrefix);
-        return this;
-    }
-
-    /**
-     * Sets the file name prefix for undo SQL migrations. (default: U)
-     * Undo SQL migrations are responsible for undoing the effects of the versioned migration with the same version.
-     * They have the following file name structure: prefixVERSIONseparatorDESCRIPTIONsuffix,
-     * which using the defaults translates to U1.1__My_description.sql
-     * <i>Flyway Teams only</i>
-     *
-     * @param undoSqlMigrationPrefix The file name prefix for undo SQL migrations. (default: U)
-     */
-    public FluentConfiguration undoSqlMigrationPrefix(String undoSqlMigrationPrefix) {
-        config.setUndoSqlMigrationPrefix(undoSqlMigrationPrefix);
         return this;
     }
 
@@ -660,7 +685,7 @@ public class FluentConfiguration implements Configuration {
      * @param baselineVersion The version to tag an existing schema with when executing baseline. (default: 1)
      */
     public FluentConfiguration baselineVersion(String baselineVersion) {
-        config.setBaselineVersion(MigrationVersion.fromVersion(baselineVersion));
+        config.setBaselineVersion(baselineVersion);
         return this;
     }
 
@@ -708,7 +733,6 @@ public class FluentConfiguration implements Configuration {
      * just want the schema history table to reflect this.
      *
      * Use in conjunction with {@code cherryPick} to skip specific migrations instead of all pending ones.
-     * <i>Flyway Teams only</i>
      */
     public FluentConfiguration skipExecutingMigrations(boolean skipExecutingMigrations) {
         config.setSkipExecutingMigrations(skipExecutingMigrations);
@@ -810,34 +834,11 @@ public class FluentConfiguration implements Configuration {
 
     /**
      * Properties to pass to the JDBC driver object
-     * <i>Flyway Teams only</i>
      *
      * @param jdbcProperties The properties to pass to the JDBC driver object
      */
     public FluentConfiguration jdbcProperties(Map<String, String> jdbcProperties) {
         config.setJdbcProperties(jdbcProperties);
-        return this;
-    }
-
-    /**
-     * Whether Flyway's support for Oracle SQL*Plus commands should be activated.
-     * <i>Flyway Teams only</i>
-     *
-     * @param oracleSqlplus {@code true} to active SQL*Plus support. {@code false} to fail fast instead. (default: {@code false})
-     */
-    public FluentConfiguration oracleSqlplus(boolean oracleSqlplus) {
-        config.setOracleSqlplus(oracleSqlplus);
-        return this;
-    }
-
-    /**
-     * Whether Flyway should issue a warning instead of an error whenever it encounters an Oracle SQL*Plus statement it doesn't yet support.
-     * <i>Flyway Teams only</i>
-     *
-     * @param oracleSqlplusWarn {@code true} to issue a warning. {@code false} to fail fast instead. (default: {@code false})
-     */
-    public FluentConfiguration oracleSqlplusWarn(boolean oracleSqlplusWarn) {
-        config.setOracleSqlplusWarn(oracleSqlplusWarn);
         return this;
     }
 
@@ -849,43 +850,6 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration kerberosConfigFile(String kerberosConfigFile) {
         config.setKerberosConfigFile(kerberosConfigFile);
-        return this;
-    }
-
-    /**
-     * When authenticating to Oracle via Kerberos, the location of the local Kerberos config cache (optional).
-     * <i>Flyway Teams only</i>
-     *
-     * @param oracleKerberosCacheFile The Kerberos cache file path.
-     */
-    public FluentConfiguration oracleKerberosCacheFile(String oracleKerberosCacheFile) {
-        config.setOracleKerberosCacheFile(oracleKerberosCacheFile);
-        return this;
-    }
-
-    /**
-     * The location of your Oracle wallet, used to automatically sign in to your databases.
-     *
-     * <i>Flyway Teams only</i>
-     *
-     * @param oracleWalletLocation The path to your Oracle Wallet
-     */
-    public FluentConfiguration oracleWalletLocation(String oracleWalletLocation) {
-        config.setOracleWalletLocation(oracleWalletLocation);
-        return this;
-    }
-
-    /**
-     * Your Flyway license key (FL01...). Not yet a Flyway Teams Edition customer?
-     * Request your <a href="https://flywaydb.org/try-flyway-teams-edition">Flyway trial license key</a>
-     * to try out Flyway Teams Edition features free for 30 days.
-     *
-     * <i>Flyway Teams only</i>
-     *
-     * @param licenseKey Your Flyway license key.
-     */
-    public FluentConfiguration licenseKey(String licenseKey) {
-        config.setLicenseKey(licenseKey);
         return this;
     }
 
@@ -970,8 +934,9 @@ public class FluentConfiguration implements Configuration {
     public FluentConfiguration loadDefaultConfigurationFiles(String encoding) {
         String installationPath = ClassUtils.getLocationOnDisk(FluentConfiguration.class);
         File installationDir = new File(installationPath).getParentFile();
+        String workingDirectory = getWorkingDirectory() != null ? getWorkingDirectory() : null;
 
-        Map<String, String> configMap = ConfigUtils.loadDefaultConfigurationFiles(installationDir, encoding);
+        Map<String, String> configMap = ConfigUtils.loadDefaultConfigurationFiles(installationDir, workingDirectory, encoding);
 
         config.configure(configMap);
         return this;
@@ -1004,6 +969,16 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration failOnMissingLocations(boolean failOnMissingLocations) {
         config.setFailOnMissingLocations(failOnMissingLocations);
+        return this;
+    }
+
+    /**
+     * Sets the JDBC driver to use. Must match the driver for the database type in the url.
+     *
+     * @param driver The name of the JDBC driver of the database.
+     */
+    public FluentConfiguration driver(String driver) {
+        config.setDriver(driver);
         return this;
     }
 }

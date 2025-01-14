@@ -2,65 +2,69 @@
 subtitle: Azure Synapse
 ---
 # Azure Synapse
+- **Verified Versions:** Latest
+- **Maintainer:** Redgate
 
-## Supported Versions
+## Supported Versions and Support Levels
 
-- `Latest`
-
-## Support Level
-
-<table class="table">
-    <tr>
-        <th width="25%">Compatible</th>
-        <td>&#10003;</td>
-    </tr>
-    <tr>
-        <th width="25%">Certified</th>
-        <td>&#10003;</td>
-    </tr>
-    <tr>
-        <th width="25%">Guaranteed</th>
-        <td>&#10003; {% include teams.html %}</td>
-    </tr>
-</table>
-
-Support Level determines the degree of support available for this database ([learn more](Learn More/Database Support Levels)). 
+{% include database-boilerplate.html %}
 
 ## Driver
-<table class="table">
-<tr>
-<th>URL format</th>
-<td><code>jdbc:sqlserver://<i>host</i>:<i>port</i>;databaseName=<i>database</i></code></td>
-</tr>
-<tr>
-<th>SSL support</th>
-<td><a href="https://docs.microsoft.com/en-us/sql/connect/jdbc/connecting-with-ssl-encryption?view=sql-server-ver15">Yes</a> - add <code>;encrypt=true</code></td>
-</tr>
-<tr>
-<th>Ships with Flyway Command-line</th>
-<td>Yes</td>
-</tr>
-<tr>
-<th>Maven Central coordinates</th>
-<td><code>com.microsoft.sqlserver:mssql-jdbc:7.2.0.jre8</code></td>
-</tr>
-<tr>
-<th>Supported versions</th>
-<td><code>4.0</code> and later</td>
-</tr>
-<tr>
-<th>Default Java class</th>
-<td><code>com.microsoft.sqlserver.jdbc.SQLServerDriver</code></td>
-</tr>
-</table>
+
+| Item                               | Details                                                                                                                              |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| **URL format**                     | <code>jdbc:sqlserver://<i>host</i>:<i>port</i>;databaseName=<i>database</i></code>                                                   |
+| **SSL support**                    | [Yes](https://docs.microsoft.com/en-us/sql/connect/jdbc/connecting-with-ssl-encryption?view=sql-server-ver15) \- add `;encrypt=true` |
+| **Ships with Flyway Command-line** | Yes                                                                                                                                  |
+| **Maven Central coordinates**      | `com.microsoft.sqlserver:mssql-jdbc`                                                                                                 |
+| **Supported versions**             | `4.0` and later                                                                                                                      |
+| **Default Java class**             | `com.microsoft.sqlserver.jdbc.SQLServerDriver`                                                                                       |
+
+
+## Java Usage
+Azure Synapse support is a separate dependency for Flyway and will need to be added to your Java project to access these features.
+Azure Synapse is found within the `flyway-sqlserver` plugin module.
+
+### Maven
+#### Redgate
+```xml
+
+<dependency>
+    <groupId>com.redgate.flyway</groupId>
+    <artifactId>flyway-sqlserver</artifactId>
+</dependency>
+```
+#### Open Source
+```xml
+
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-sqlserver</artifactId>
+</dependency>
+```
+
+### Gradle
+#### Redgate
+```groovy
+dependencies {
+    compile "com.redgate.flyway:flyway-sqlserver"
+}
+```
+
+#### Open Source
+```groovy
+dependencies {
+    compile "org.flywaydb:flyway-sqlserver"
+}
+```
 
 ## Azure Synapse Syntax
 
-- [See SQL Server](Supported Databases/SQL Server#sql-server-syntax)
+- See [SQL Server](<Supported Databases/SQL Server Database>)
 
 ### Compatibility
 
-- [See SQL Server](Supported Databases/SQL Server#compatibility)
+- See [SQL Server](<Supported Databases/SQL Server Database>)
 
 ### Example
 
@@ -79,9 +83,10 @@ INSERT INTO ${tableName} (name) VALUES ('Mr. T');
 
 ## Authentication
 
-[See SQL Server](Supported Databases/SQL Server#authentication)
+See [SQL Server](<Supported Databases/SQL Server Database>)
 
 ## Limitations
 
-- [See SQL Server](Supported Databases/SQL Server#limitations)
+- See [SQL Server](<Supported Databases/SQL Server Database>)
 - The JTDS driver does not support Azure Synapse
+- Flyway only supports the use of dedicated pools, attempting to use serverless pools will return an 'Unknown SQL Server engine edition: 11' exception.

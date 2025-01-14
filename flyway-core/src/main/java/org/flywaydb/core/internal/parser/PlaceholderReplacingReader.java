@@ -1,21 +1,26 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.parser;
 
 import org.flywaydb.core.api.FlywayException;
+import org.flywaydb.core.api.LoadableMigrationInfo;
 import org.flywaydb.core.api.configuration.Configuration;
 
 import java.io.FilterReader;
@@ -27,6 +32,7 @@ import java.util.Map;
 public class PlaceholderReplacingReader extends FilterReader {
     private final String prefix;
     private final String suffix;
+    private final String separator;
     private final CaseInsensitiveMap placeholders = new CaseInsensitiveMap();
 
     private final StringBuilder buffer = new StringBuilder();
@@ -63,10 +69,15 @@ public class PlaceholderReplacingReader extends FilterReader {
         }
     }
 
-    public PlaceholderReplacingReader(String prefix, String suffix, Map<String, String> placeholders, Reader in) {
+    public PlaceholderReplacingReader(final String prefix,
+        final String suffix,
+        final String separator,
+        final Map<String, String> placeholders,
+        final Reader in) {
         super(in);
         this.prefix = prefix;
         this.suffix = suffix;
+        this.separator = separator;
         this.placeholders.putAll(placeholders);
     }
 
@@ -79,11 +90,31 @@ public class PlaceholderReplacingReader extends FilterReader {
         placeholders.putAll(parsingContextPlaceholders);
 
         return new PlaceholderReplacingReader(
-                configuration.getPlaceholderPrefix(),
-                configuration.getPlaceholderSuffix(),
-                placeholders,
-                reader);
+            configuration.getPlaceholderPrefix(),
+            configuration.getPlaceholderSuffix(),
+            configuration.getPlaceholderSeparator(),
+            placeholders,
+            reader);
     }
+        public static PlaceholderReplacingReader create(Configuration configuration, ParsingContext parsingContext, LoadableMigrationInfo info) {
+            Map<String, String> placeholders = new HashMap<>();
+            Map<String, String> configurationPlaceholders = configuration.getPlaceholders();
+            Map<String, String> parsingContextPlaceholders = parsingContext.getPlaceholders();
+
+            final boolean placeholderReplacement = info.isPlaceholderReplacement() == null
+                ? configuration.isPlaceholderReplacement()
+                : info.isPlaceholderReplacement();
+            if (placeholderReplacement) {
+                placeholders.putAll(configurationPlaceholders);
+                placeholders.putAll(parsingContextPlaceholders);
+            }
+                return new PlaceholderReplacingReader(
+                    configuration.getPlaceholderPrefix(),
+                    configuration.getPlaceholderSuffix(),
+                    configuration.getPlaceholderSeparator(),
+                    placeholders,
+                    info.getLoadableResource().read());
+            }
 
     public static PlaceholderReplacingReader createForScriptMigration(Configuration configuration, ParsingContext parsingContext, Reader reader) {
         Map<String, String> placeholders = new HashMap<>();
@@ -96,6 +127,7 @@ public class PlaceholderReplacingReader extends FilterReader {
         return new PlaceholderReplacingReader(
                 configuration.getScriptPlaceholderPrefix(),
                 configuration.getScriptPlaceholderSuffix(),
+                "_",
                 placeholders,
                 reader);
     }
@@ -157,7 +189,7 @@ public class PlaceholderReplacingReader extends FilterReader {
             if (!placeholders.containsKey(placeholder)) {
                 String canonicalPlaceholder = prefix + placeholder + suffix;
 
-                if (placeholder.contains("flyway:")) {
+                if (placeholder.startsWith("flyway" + separator)) {
                     throw new FlywayException("Failed to populate value for default placeholder: "
                                                       + canonicalPlaceholder);
                 }

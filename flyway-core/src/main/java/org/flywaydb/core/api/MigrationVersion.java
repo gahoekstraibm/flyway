@@ -1,19 +1,25 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.api;
+
+import lombok.Getter;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -52,6 +58,18 @@ public final class MigrationVersion implements Comparable<MigrationVersion> {
     private final String displayText;
 
     /**
+     * The raw, unprocessed text to represent the version.
+     */
+    @Getter
+    private final String rawVersion;
+
+    /**
+     * Is this version an internal predefined version?
+     */
+    @Getter
+    private boolean predefined;
+
+    /**
      * Create a MigrationVersion from a version String.
      *
      * @param version The version String. The value {@code current} will be interpreted as MigrationVersion.CURRENT,
@@ -85,6 +103,7 @@ public final class MigrationVersion implements Comparable<MigrationVersion> {
         String normalizedVersion = version.replace('_', '.');
         this.versionParts = tokenize(normalizedVersion);
         this.displayText = normalizedVersion;
+        this.rawVersion = version;
     }
 
     /**
@@ -96,6 +115,8 @@ public final class MigrationVersion implements Comparable<MigrationVersion> {
         this.versionParts = new ArrayList<>();
         this.versionParts.add(version);
         this.displayText = displayText;
+        this.rawVersion = displayText;
+        this.predefined = true;
     }
 
     @Override
@@ -112,6 +133,22 @@ public final class MigrationVersion implements Comparable<MigrationVersion> {
         }
         if (this.equals(LATEST)) {
             return Long.toString(Long.MAX_VALUE);
+        }
+        return displayText;
+    }
+
+    public String getName() {
+        if (this.equals(EMPTY)) {
+            return null;
+        }
+        if (this.equals(LATEST)) {
+            return "latest";
+        }
+        if (this.equals(CURRENT)) {
+            return "current";
+        }
+        if (this.equals(NEXT)) {
+            return "next";
         }
         return displayText;
     }
@@ -153,6 +190,16 @@ public final class MigrationVersion implements Comparable<MigrationVersion> {
      */
     public boolean isNewerThan(String otherVersion) {
         return compareTo(MigrationVersion.fromVersion(otherVersion)) > 0;
+    }
+
+    /**
+     * Convenience method for quickly checking whether this version is newer than this other version.
+     *
+     * @param otherVersion The other version.
+     * @return {@code true} if this version is newer, {@code false} if it is not.
+     */
+    public boolean isNewerThan(MigrationVersion otherVersion) {
+        return compareTo(otherVersion) > 0;
     }
 
     /**
@@ -221,6 +268,10 @@ public final class MigrationVersion implements Comparable<MigrationVersion> {
 
         if (o == CURRENT) {
             return 1;
+        }
+
+        if (o == NEXT) {
+            return -1;
         }
 
         if (o == LATEST) {

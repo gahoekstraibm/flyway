@@ -5,7 +5,7 @@ subtitle: 'Command-line: validate'
 # Command-line: validate
 
 Validate applied migrations against resolved ones (on the filesystem or classpath)
-to detect accidental changes that may prevent the schema(s) from being recreated exactly.
+to detect accidental changes that may prevent the schemas from being recreated exactly.
 
 Validation fails if
 - differences in migration names, types or checksums are found
@@ -51,7 +51,6 @@ flyway.callbacks=com.mycomp.project.CustomCallback,com.mycomp.project.AnotherCal
 flyway.skipDefaultCallbacks=false
 flyway.target=5.1
 flyway.outOfOrder=false
-flyway.cleanOnValidationError=false
 flyway.oracle.sqlplus=true
 flyway.oracle.sqlplusWarn=true
 flyway.workingDirectory=C:/myProject

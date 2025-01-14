@@ -1,17 +1,21 @@
-/*
- * Copyright (C) Red Gate Software Ltd 2010-2022
- *
+/*-
+ * ========================LICENSE_START=================================
+ * flyway-core
+ * ========================================================================
+ * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.internal.info;
 
@@ -25,6 +29,7 @@ import org.flywaydb.core.internal.util.AsciiTable;
 import org.flywaydb.core.internal.util.DateUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Dumps migrations in an ascii-art table in the logs and the console.
@@ -40,7 +45,7 @@ public class MigrationInfoDumper {
      */
     public static String dumpToAsciiTable(MigrationInfo[] migrationInfos) {
         Set<MigrationVersion> undoableVersions = getUndoableVersions(migrationInfos);
-        migrationInfos = removeAvailableUndos(migrationInfos);
+        migrationInfos = removeUndos(migrationInfos);
 
         List<String> columns = Arrays.asList("Category", "Version", "Description", "Type", "Installed On", "State", "Undoable");
 
@@ -58,6 +63,20 @@ public class MigrationInfoDumper {
         }
 
         return new AsciiTable(columns, rows, true, "", "No migrations found").render();
+    }
+
+    /**
+     * Dumps the info about all migrations into a String of Migration Ids.
+     *
+     * @param migrationInfos The list of migrationInfos to dump.
+     * @return The String containing Migration Ids, separated by comma.
+     */
+    public static String dumpToMigrationIds(MigrationInfo[] migrationInfos) {
+        migrationInfos = removeUndos(migrationInfos);
+
+        return Arrays.stream(migrationInfos)
+                     .map(m -> m.getVersion() == null ? m.getDescription() : m.getVersion().getVersion())
+                     .collect(Collectors.joining(","));
     }
 
     static String getCategory(MigrationInfo migrationInfo) {
@@ -104,10 +123,10 @@ public class MigrationInfoDumper {
         return result;
     }
 
-    private static MigrationInfo[] removeAvailableUndos(MigrationInfo[] migrationInfos) {
+    private static MigrationInfo[] removeUndos(MigrationInfo[] migrationInfos) {
         List<MigrationInfo> result = new ArrayList<>();
         for (MigrationInfo migrationInfo : migrationInfos) {
-            if (!migrationInfo.getState().equals(MigrationState.AVAILABLE)) {
+            if (!migrationInfo.getType().isUndo()) {
                 result.add(migrationInfo);
             }
         }
