@@ -26,21 +26,23 @@ public class PropertyResolverContextImpl implements PropertyResolverContext{
 
     @Override
     public String resolveValue(String value) {
-        if (value == null || !value.startsWith("$")) {
-            return value;
-        } else if (value.startsWith("$$")) {
-            return value.substring(1);
-        }
+        //skip property resolvers as the initial implementation introduced with 9.9.0 was not robust yet 
+        return value;
 
-        int splitIndex = value.indexOf(".");
-        String resolverName = splitIndex != -1 ? value.substring(1, splitIndex) : value.substring(1);
-        String resolverParam = splitIndex != -1 ? value.substring(splitIndex + 1) : null;
+        // if (value == null || !value.startsWith("$")) {
+            // return value;
+        // } else if (value.startsWith("$$")) {
+            // return value.substring(1);
+        // }
 
-        if (!resolvers.containsKey(resolverName)) {
-            throw new FlywayException("Unknown resolver: " + resolverName);
-        }
-        return resolvers.get(resolverName).resolve(resolverParam, this);
+        // int splitIndex = value.indexOf(".");
+        // String resolverName = splitIndex != -1 ? value.substring(1, splitIndex) : value.substring(1);
+        // String resolverParam = splitIndex != -1 ? value.substring(splitIndex + 1) : null;
 
+        // if (!resolvers.containsKey(resolverName)) {
+            // throw new FlywayException("Unknown resolver: " + resolverName);
+        // }
+        // return resolvers.get(resolverName).resolve(resolverParam, this);
     }
     
     public String resolveProperty(String resolverName, String propertyName) {
