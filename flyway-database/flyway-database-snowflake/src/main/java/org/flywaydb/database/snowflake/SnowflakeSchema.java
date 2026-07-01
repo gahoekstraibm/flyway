@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-snowflake
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ public class SnowflakeSchema extends Schema<SnowflakeDatabase, SnowflakeTable> {
                 return (SnowflakeTable) getTable(tableName);
             }
         });
-        return tables.toArray(new SnowflakeTable[0]);
+        return tables.toArray(SnowflakeTable[]::new);
     }
 
     @Override

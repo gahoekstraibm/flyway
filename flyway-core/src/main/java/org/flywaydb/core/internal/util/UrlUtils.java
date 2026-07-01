@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,16 @@
  */
 package org.flywaydb.core.internal.util;
 
+import static org.flywaydb.core.extensibility.AwsSecretsManagerSupport.JDBC_SECRETS_MANAGER;
+import static org.flywaydb.core.extensibility.AwsSecretsManagerSupport.JDBC_SECRETS_MANAGER_PREFIX;
+import static org.flywaydb.core.internal.configuration.ConfigUtils.isOSS;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +36,7 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import org.flywaydb.core.internal.license.FlywayEditionUpgradeRequiredException;
 
 /**
  * Collection of utility methods for working with URLs.
@@ -64,5 +75,59 @@ public class UrlUtils {
 
     public static String decodeURLSafe(String url) {
        return decodeURL(url.replace("+", "%2b"));
+    }
+
+    public static void guardJdbcSecretsManagerURL(final String url) {
+        if (url.startsWith(JDBC_SECRETS_MANAGER_PREFIX) && isOSS()) {
+            throw new FlywayEditionUpgradeRequiredException(null, JDBC_SECRETS_MANAGER);
+        }
+    }
+
+    public static boolean isSecretManagerUrl(final String url, final String databaseType) {
+        if (url.startsWith(JDBC_SECRETS_MANAGER_PREFIX + databaseType + ":")) {
+            if (isOSS()) {
+                throw new FlywayEditionUpgradeRequiredException(null, JDBC_SECRETS_MANAGER);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isAwsWrapperUrl(final String url, final String databaseType) {
+        return url.startsWith("jdbc:aws-wrapper:" + databaseType + ":");
+    }
+
+    public static Map<String, String> extractQueryParams(String uri) {
+        uri = uri.replace('\\', '/');
+        try {
+            int queryIndex = uri.indexOf("?");
+
+            // No query parameters detected in the connection string
+            if (queryIndex == -1) {
+                return Collections.emptyMap();
+            }
+
+            String baseUri = uri.substring(0, queryIndex);
+            String queryPart = uri.substring(queryIndex + 1);
+
+            String encodedQuery = URLEncoder.encode(queryPart, StandardCharsets.UTF_8);
+            URI parsedUri = new URI(baseUri + "?" + encodedQuery);
+            String query = parsedUri.getQuery();
+            Map<String, String> queryParams = new HashMap<>();
+
+            if (query != null) {
+                String[] pairs = query.split("&");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=", 2);
+                    if (keyValue.length == 2) {
+                        queryParams.put(keyValue[0], keyValue[1]);
+                    }
+                }
+            }
+            return queryParams;
+        } catch (Exception e) {
+            return Collections.emptyMap();
+        }
     }
 }

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-sqlserver
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,13 +161,15 @@ public class SQLServerSchema extends Schema<SQLServerDatabase, SQLServerTable> {
                                        ObjectType.STORED_PROCEDURE, ObjectType.CLR_STORED_PROCEDURE, ObjectType.USER_TABLE,
                                        ObjectType.SYNONYM, ObjectType.SEQUENCE_OBJECT, ObjectType.FOREIGN_KEY, ObjectType.VIEW).isEmpty();
         if (empty) {
-            int objectCount = jdbcTemplate.queryForInt("SELECT count(*) FROM " +
-                                                               "( " +
-                                                               "SELECT t.name FROM sys.types t INNER JOIN sys.schemas s ON t.schema_id = s.schema_id " +
-                                                               "WHERE t.is_user_defined = 1 AND s.name = ? " +
-                                                               "Union " +
-                                                               "SELECT name FROM sys.assemblies WHERE is_user_defined=1" +
-                                                               ") R", name);
+            String typesAndAssembliesQuery = "SELECT count(*) FROM " +
+                                             "( " +
+                                             "SELECT t.name FROM sys.types t INNER JOIN sys.schemas s ON t.schema_id = s.schema_id " +
+                                             "WHERE t.is_user_defined = 1 AND s.name = ? " +
+                                             (database.supportsAssemblies()
+                                                     ? "Union SELECT name FROM sys.assemblies WHERE is_user_defined=1"
+                                                     : "") +
+                                             ") R";
+            int objectCount = jdbcTemplate.queryForInt(typesAndAssembliesQuery, name);
             empty = objectCount == 0;
         }
         return empty;
@@ -305,18 +307,7 @@ public class SQLServerSchema extends Schema<SQLServerDatabase, SQLServerTable> {
      * @throws SQLException when the retrieval failed.
      */
     private List<DBObject> queryDBObjectsWithParent(DBObject parent, ObjectType... types) throws SQLException {
-        StringBuilder query = new StringBuilder("SELECT obj.object_id, obj.name FROM sys.objects AS obj WITH (NOLOCK)" +
-                                                        "LEFT JOIN sys.extended_properties AS eps WITH (NOLOCK)" +
-                                                        "ON obj.object_id = eps.major_id " +
-                                                        "AND eps.class = 1 " +    // Class 1 = objects and columns (we are only interested in objects).
-                                                        "AND eps.minor_id = 0 " + // Minor ID, always 0 for objects.
-                                                        "AND eps.name='microsoft_database_tools_support' " + // Select all objects generated from MS database tools.
-                                                        "WHERE SCHEMA_NAME(obj.schema_id) = '" + name + "' " +
-                                                        "AND eps.major_id IS NULL " + // Left Excluding JOIN (we are only interested in user defined entries).
-                                                        "AND obj.is_ms_shipped = 0 " + // Make sure we do not return anything MS shipped.
-                                                        "AND obj.type IN (" // Select the object types.
-        );
-
+        StringBuilder query = getObjectWithParentQuery();
         // Build the types IN clause.
         boolean first = true;
         for (ObjectType type : types) {
@@ -336,6 +327,20 @@ public class SQLServerSchema extends Schema<SQLServerDatabase, SQLServerTable> {
         query.append(" order by create_date desc, object_id desc");
 
         return jdbcTemplate.query(query.toString(), rs -> new DBObject(rs.getLong("object_id"), rs.getString("name")));
+    }
+
+    protected StringBuilder getObjectWithParentQuery() {
+        return new StringBuilder("SELECT obj.object_id, obj.name FROM sys.objects AS obj WITH (NOLOCK)" +
+            "LEFT JOIN sys.extended_properties AS eps WITH (NOLOCK)" +
+            "ON obj.object_id = eps.major_id " +
+            "AND eps.class = 1 " +    // Class 1 = objects and columns (we are only interested in objects).
+            "AND eps.minor_id = 0 " + // Minor ID, always 0 for objects.
+            "AND eps.name='microsoft_database_tools_support' " + // Select all objects generated from MS database tools.
+            "WHERE SCHEMA_NAME(obj.schema_id) = '" + name + "' " +
+            "AND eps.major_id IS NULL " + // Left Excluding JOIN (we are only interested in user defined entries).
+            "AND obj.is_ms_shipped = 0 " + // Make sure we do not return anything MS shipped.
+            "AND obj.type IN (" // Select the object types.
+        );
     }
 
     private List<String> cleanPrimaryKeys(List<DBObject> tables) throws SQLException {

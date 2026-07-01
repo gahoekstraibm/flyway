@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,13 @@
 package org.flywaydb.core.api.logging;
 
 public interface Log {
-
-    boolean isDebugEnabled();
+    @Deprecated
+    /// @deprecated Use LogFactory.isDebugEnabled() instead.
+    /// if you require custom behavior from this property in your own logger
+    /// remove the @override decorator.
+    default boolean isDebugEnabled() {
+        return LogFactory.isDebugEnabled();
+    }
 
     void debug(String message);
 

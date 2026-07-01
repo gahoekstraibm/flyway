@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,95 +19,199 @@
  */
 package org.flywaydb.core.internal.plugin;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.CustomLog;
-import lombok.NoArgsConstructor;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.extensibility.Plugin;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ServiceLoader;
-import java.util.stream.Collectors;
-
 @SuppressWarnings("unchecked")
 @CustomLog
-@NoArgsConstructor
 public class PluginRegister {
-    private final List<Plugin> REGISTERED_PLUGINS = new ArrayList<>();
+    private static final ConcurrentHashMap<ClassLoader, List<ServiceLoader.Provider<Plugin>>> PROVIDER_CACHE = new ConcurrentHashMap<>();
+
+    private final List<ServiceLoader.Provider<Plugin>> REGISTERED_PROVIDERS = new ArrayList<>();
+    private final Map<ServiceLoader.Provider<Plugin>, Plugin> INSTANTIATED_PLUGINS = new ConcurrentHashMap<>();
     private final ClassLoader CLASS_LOADER = this.getClass().getClassLoader();
     private boolean hasRegisteredPlugins;
 
+    public PluginRegister() {}
+
+    private PluginRegister(final boolean skipRegistration) {
+        hasRegisteredPlugins = skipRegistration;
+    }
+
+    /**
+     * @deprecated Use {@link #getExact(Class)} instead.
+     */
+    @Deprecated
     public <T extends Plugin> T getPlugin(final Class<T> clazz) {
-        return (T) getPlugins()
-                .stream()
-                .filter(p -> p.getClass().getCanonicalName().equals(clazz.getCanonicalName()))
-                .findFirst()
-                .orElse(null);
+        return getExact(clazz);
     }
 
+    /**
+     * @deprecated Use {@link #getInstancesOf(Class)} instead.
+     */
+    @Deprecated
     public <T extends Plugin> List<T> getPlugins(final Class<T> clazz) {
-        return (List<T>) getPlugins()
-                .stream()
-                .filter(clazz::isInstance)
-                .sorted()
-                .collect(Collectors.toList());
+        return getInstancesOf(clazz);
     }
 
+    /**
+     * @deprecated Use {@link #getLicensedInstancesOf(Class, Configuration)} instead.
+     */
+    @Deprecated
     public <T extends Plugin> List<T> getLicensedPlugins(final Class<T> clazz, final Configuration configuration) {
-        return (List<T>) getPlugins()
-                .stream()
-                .filter(clazz::isInstance)
-                .filter(p -> p.isLicensed(configuration))
-                .sorted()
-                .collect(Collectors.toList());
+        return getLicensedInstancesOf(clazz, configuration);
     }
 
+    /**
+     * @deprecated Use {@link #getLicensedInstanceOf(Class, Configuration)} instead.
+     */
+    @Deprecated
+    public <T extends Plugin> T getLicensedPlugin(final Class<T> clazz, final Configuration configuration) {
+        return getLicensedInstanceOf(clazz, configuration);
+    }
+
+    /**
+     * @deprecated Use {@link #getLicensedExact(String, Configuration)} instead.
+     */
+    @Deprecated
     public <T extends Plugin> T getLicensedPlugin(final String className, final Configuration configuration) {
-        return (T) getPlugins()
+        return getLicensedExact(className, configuration);
+    }
+
+    /**
+     * @deprecated Use {@link #getExact(String)} instead.
+     */
+    @Deprecated
+    public <T extends Plugin> T getPlugin(final String className) {
+        return getExact(className);
+    }
+
+    /**
+     * @deprecated Use {@link #getInstanceOf(Class)} instead.
+     */
+    @Deprecated
+    public <T extends Plugin> T getPluginInstanceOf(final Class<T> clazz) {
+        return getInstanceOf(clazz);
+    }
+
+    public <T extends Plugin> T getExact(final Class<T> clazz) {
+        return (T) getMatchingProviders(clazz)
                 .stream()
-                .filter(p -> p.isLicensed(configuration))
-                .filter(p -> p.getClass().getSimpleName().equals(className))
-                .sorted()
+                .map(this::instantiate)
+                .filter(p -> p != null && p.getClass().getCanonicalName().equals(clazz.getCanonicalName()))
                 .findFirst()
                 .orElse(null);
     }
 
-    public <T extends Plugin> T getPlugin(final String className) {
-        return (T) getPlugins()
+    public <T extends Plugin> List<T> getInstancesOf(final Class<T> clazz) {
+        return (List<T>) getMatchingProviders(clazz)
+                .stream()
+                .map(this::instantiate)
+                .filter(p -> p != null && clazz.isInstance(p))
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public <T extends Plugin> List<T> getLicensedInstancesOf(final Class<T> clazz, final Configuration configuration) {
+        return (List<T>) getMatchingProviders(clazz)
+                .stream()
+                .map(this::instantiate)
+                .filter(p -> p != null && clazz.isInstance(p))
+                .filter(p -> p.isLicensed(configuration))
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public <T extends Plugin> T getLicensedInstanceOf(final Class<T> clazz, final Configuration configuration) {
+        return getLicensedInstancesOf(clazz, configuration).stream().findFirst().orElse(null);
+    }
+
+    public <T extends Plugin> T getLicensedExact(final String className, final Configuration configuration) {
+        return (T) getProviders()
+                .stream()
+                .filter(p -> p.type().getSimpleName().equals(className))
+                .map(this::instantiate)
+                .filter(p -> p != null && p.isLicensed(configuration))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public <T extends Plugin> T getExact(final String className) {
+        return (T) getProviders()
             .stream()
-            .filter(p -> p.getClass().getSimpleName().equals(className))
+            .filter(p -> p.type().getSimpleName().equals(className))
+            .map(this::instantiate)
+            .filter(p -> p != null)
+            .findFirst()
+            .orElse(null);
+    }
+
+    public <T extends Plugin> T getInstanceOf(final Class<T> clazz) {
+        return (T) getMatchingProviders(clazz)
+            .stream()
+            .map(this::instantiate)
+            .filter(p -> p != null && clazz.isInstance(p))
             .sorted()
             .findFirst()
             .orElse(null);
     }
 
-    private List<Plugin> getPlugins() {
+    List<ServiceLoader.Provider<Plugin>> getRegisteredProviders() {
+        return getProviders();
+    }
+
+    private Plugin instantiate(final ServiceLoader.Provider<Plugin> provider) {
+        return INSTANTIATED_PLUGINS.computeIfAbsent(provider, p -> {
+            final Plugin plugin = p.get();
+            if (plugin.isEnabled()) {
+                return plugin;
+            }
+            return null;
+        });
+    }
+
+    private List<ServiceLoader.Provider<Plugin>> getProviders() {
         registerPlugins();
-        return Collections.unmodifiableList(REGISTERED_PLUGINS);
+        return Collections.unmodifiableList(REGISTERED_PROVIDERS);
+    }
+
+    private <T extends Plugin> List<ServiceLoader.Provider<Plugin>> getMatchingProviders(final Class<T> clazz) {
+        return getProviders()
+            .stream()
+            .filter(p -> clazz.isAssignableFrom(p.type()))
+            .collect(Collectors.toList());
     }
 
     void registerPlugins() {
-        synchronized (REGISTERED_PLUGINS) {
+        synchronized (REGISTERED_PROVIDERS) {
             if (hasRegisteredPlugins) {
                 return;
             }
 
-            for (final Plugin plugin : ServiceLoader.load(Plugin.class, CLASS_LOADER)) {
-                if (plugin.isEnabled()) {
-                    REGISTERED_PLUGINS.add(plugin);
-                }
-            }
+            final List<ServiceLoader.Provider<Plugin>> cached = PROVIDER_CACHE.computeIfAbsent(CLASS_LOADER,
+                cl -> ServiceLoader.load(Plugin.class, cl).stream().collect(Collectors.toList()));
+            REGISTERED_PROVIDERS.addAll(cached);
 
             hasRegisteredPlugins = true;
         }
     }
 
-    public PluginRegister getCopy(){
-        final PluginRegister copy = new PluginRegister();
-        copy.REGISTERED_PLUGINS.clear();
-        copy.REGISTERED_PLUGINS.addAll(getPlugins().stream().map(Plugin::copy).toList());
-        copy.hasRegisteredPlugins = true;
+    public PluginRegister getCopy() {
+        final PluginRegister copy = new PluginRegister(true);
+        copy.REGISTERED_PROVIDERS.addAll(getProviders());
+        for (final var entry : INSTANTIATED_PLUGINS.entrySet()) {
+            if (entry.getValue() != null) {
+                copy.INSTANTIATED_PLUGINS.put(entry.getKey(), entry.getValue().copy());
+            }
+        }
         return copy;
     }
 }

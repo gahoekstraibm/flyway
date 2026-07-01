@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-reports
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,9 @@ package org.flywaydb.reports.html;
 
 import java.util.Arrays;
 import java.util.List;
-import lombok.Getter;
 
-@Getter
-public class HoldingTabMetadata {
-    private String name;
-    private List<String> supportedEditions;
-
-    public HoldingTabMetadata(String name, String... supportedEditions) {
-        this.name = name;
-        this.supportedEditions = Arrays.asList(supportedEditions);
+record HoldingTabMetadata(String name, List<String> supportedEditions) {
+    HoldingTabMetadata(final String name, final String... supportedEditions) {
+        this(name, Arrays.asList(supportedEditions));
     }
 }

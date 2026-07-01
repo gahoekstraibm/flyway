@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-reports
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,5 +25,10 @@ public class MigrateResultDeserializer implements HtmlResultDeserializer<Migrate
     @Override
     public Class<MigrateResult> getDeserializingClass() {
         return MigrateResult.class;
+    }
+
+    @Override
+    public String operationKey() {
+        return "migrate";
     }
 }

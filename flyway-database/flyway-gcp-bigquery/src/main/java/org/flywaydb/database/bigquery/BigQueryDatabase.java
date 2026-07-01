@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-gcp-bigquery
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class BigQueryDatabase extends Database<BigQueryConnection> {
         if (!LicenseGuard.isLicensed(configuration, Tier.PREMIUM)) {
             long databaseSize = getDatabaseSize();
             if (databaseSize > TEN_GB_DATABASE_SIZE_LIMIT) {
-                throw new FlywayEditionUpgradeRequiredException(Tier.TEAMS, LicenseGuard.getTier(configuration),
+                throw new FlywayEditionUpgradeRequiredException(LicenseGuard.getTier(configuration),
                     "A Google BigQuery database that exceeds the 10 GB database size limit " +
                     "(Calculated size: " + GIGABYTE.toHumanReadableString(databaseSize) + ")");
             }

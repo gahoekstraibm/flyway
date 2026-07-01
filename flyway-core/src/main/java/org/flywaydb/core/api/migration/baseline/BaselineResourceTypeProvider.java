@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class BaselineResourceTypeProvider implements ResourceTypeProvider {
     @Override
     public List<Pair<String, ResourceType>> getPrefixTypePairs(Configuration configuration) {
         List<Pair<String, ResourceType>> pairs = new ArrayList<>();
-        pairs.add(Pair.of(configuration.getPluginRegister().getPlugin(BaselineMigrationConfigurationExtension.class).getBaselineMigrationPrefix(), BaselineResourceType.BASELINE_MIGRATION));
+        pairs.add(Pair.of(configuration.getPluginRegister().getExact(BaselineMigrationConfigurationExtension.class).getBaselineMigrationPrefix(), BaselineResourceType.BASELINE_MIGRATION));
         return pairs;
     }
 }

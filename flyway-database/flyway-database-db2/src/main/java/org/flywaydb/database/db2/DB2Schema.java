@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-db2
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,7 +291,7 @@ public class DB2Schema extends Schema<DB2Database, DB2Table> {
             functions.add(getFunction(functionName));
         }
 
-        return functions.toArray(new Function[0]);
+        return functions.toArray(Function[]::new);
     }
 
     @Override

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class DbValidate {
     private final Database database;
     private final CompositeMigrationResolver migrationResolver;
     private final Configuration configuration;
-    private final CallbackExecutor callbackExecutor;
+    private final CallbackExecutor<Event> callbackExecutor;
     private final Connection connection;
     private final ValidatePattern[] ignorePatterns;
 
@@ -106,8 +106,7 @@ public class DbValidate {
                     MigrationInfoServiceImpl migrationInfoService = new MigrationInfoServiceImpl(migrationResolver, schemaHistory, database, configuration,
                                                                                                  configuration.getTarget(),
                                                                                                  configuration.isOutOfOrder(),
-                                                                                                 ignorePatterns,
-                                                                                                 configuration.getCherryPick());
+                                                                                                 ignorePatterns);
 
                     migrationInfoService.refresh();
 

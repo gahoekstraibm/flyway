@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public class ResourceNameParser {
     private List<Pair<String, ResourceType>> populatePrefixes(Configuration configuration) {
         List<Pair<String, ResourceType>> prefixes = new ArrayList<>();
 
-        configuration.getPluginRegister().getPlugins(ResourceTypeProvider.class)
+        configuration.getPluginRegister().getInstancesOf(ResourceTypeProvider.class)
                 .forEach(resourceTypeProvider -> prefixes.addAll(resourceTypeProvider.getPrefixTypePairs(configuration)));
 
         Comparator<Pair<String, ResourceType>> prefixComparator = (p1, p2) -> {

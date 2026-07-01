@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-reports
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public interface HtmlRenderer<T extends HtmlResult> extends Plugin {
     String render(T result, Configuration config);
     String tabTitle(T result, Configuration config);
     Class<T> getType();
-    default List<HtmlReportSummary> getHtmlSummary(T result) {
+    default List<HtmlReportSummary> getHtmlSummary(final T result, final Configuration config) {
         return null;
     }
 }

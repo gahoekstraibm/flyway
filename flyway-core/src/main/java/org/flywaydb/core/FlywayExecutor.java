@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,45 @@
  */
 package org.flywaydb.core;
 
+import static org.flywaydb.core.api.callback.Event.AFTER_CONNECT;
+import static org.flywaydb.core.api.callback.Event.CREATE_SCHEMA;
+import static org.flywaydb.core.internal.database.DatabaseTypeRegister.redactJdbcUrl;
+import static org.flywaydb.core.internal.util.DataUnits.MEGABYTE;
+import static org.flywaydb.core.internal.util.DeprecationUtils.DeprecatedFeatures.INIT_SQL;
+import static org.flywaydb.core.internal.util.DeprecationUtils.printDeprecationNotice;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import lombok.CustomLog;
 import org.flywaydb.core.api.ClassProvider;
+import org.flywaydb.core.api.CoreLocationPrefix;
+import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.ResourceProvider;
-import org.flywaydb.core.api.callback.Callback;
+import org.flywaydb.core.api.callback.Event;
+import org.flywaydb.core.api.callback.GenericCallback;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.api.migration.JavaMigration;
 import org.flywaydb.core.extensibility.LicenseGuard;
-import org.flywaydb.core.extensibility.RootTelemetryModel;
 import org.flywaydb.core.extensibility.Tier;
-import org.flywaydb.core.internal.callback.*;
-
+import org.flywaydb.core.internal.callback.CallbackExecutor;
+import org.flywaydb.core.internal.callback.DefaultCallbackExecutor;
+import org.flywaydb.core.internal.callback.InternalCallback;
+import org.flywaydb.core.internal.callback.NoopCallback;
+import org.flywaydb.core.internal.callback.NoopCallbackExecutor;
+import org.flywaydb.core.internal.callback.SqlScriptCallbackFactory;
+import org.flywaydb.core.internal.callback.PreConnectCallbackExecutor;
 import org.flywaydb.core.internal.clazz.NoopClassProvider;
 import org.flywaydb.core.internal.configuration.ConfigurationValidator;
 import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.database.base.CommunityDatabaseType;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Schema;
+import org.flywaydb.core.extensibility.ErrorOverrideInitializer;
 import org.flywaydb.core.internal.jdbc.JdbcConnectionFactory;
 import org.flywaydb.core.internal.jdbc.StatementInterceptor;
 import org.flywaydb.core.internal.parser.ParsingContext;
@@ -44,8 +66,6 @@ import org.flywaydb.core.internal.resolver.script.ScriptMigrationResolver;
 import org.flywaydb.core.internal.resource.NoopResourceProvider;
 import org.flywaydb.core.internal.resource.ResourceNameValidator;
 import org.flywaydb.core.internal.resource.StringResource;
-import org.flywaydb.core.internal.scanner.LocationScannerCache;
-import org.flywaydb.core.internal.scanner.ResourceNameCache;
 import org.flywaydb.core.internal.scanner.Scanner;
 import org.flywaydb.core.internal.schemahistory.SchemaHistory;
 import org.flywaydb.core.internal.schemahistory.SchemaHistoryFactory;
@@ -53,28 +73,21 @@ import org.flywaydb.core.internal.sqlscript.SqlScript;
 import org.flywaydb.core.internal.sqlscript.SqlScriptExecutorFactory;
 import org.flywaydb.core.internal.sqlscript.SqlScriptFactory;
 import org.flywaydb.core.internal.strategy.RetryStrategy;
+import org.flywaydb.core.internal.util.DeprecationUtils.DeprecatedFeatures;
 import org.flywaydb.core.internal.util.FileUtils;
-import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 import org.flywaydb.core.internal.util.IOUtils;
 import org.flywaydb.core.internal.util.Pair;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.flywaydb.core.api.callback.Event.CREATE_SCHEMA;
-import static org.flywaydb.core.internal.database.DatabaseTypeRegister.redactJdbcUrl;
-import static org.flywaydb.core.internal.util.DataUnits.MEGABYTE;
-
-import org.flywaydb.core.internal.license.FlywayExpiredLicenseKeyException;
 
 @CustomLog
 public class FlywayExecutor {
     public interface Command<T> {
-        T execute(CompositeMigrationResolver migrationResolver, SchemaHistory schemaHistory, Database database,
-                  Schema defaultSchema, Schema[] schemas, CallbackExecutor callbackExecutor, StatementInterceptor statementInterceptor);
+        T execute(CompositeMigrationResolver migrationResolver,
+            SchemaHistory schemaHistory,
+            Database database,
+            Schema defaultSchema,
+            Schema[] schemas,
+            CallbackExecutor<Event> callbackExecutor,
+            StatementInterceptor statementInterceptor);
     }
 
     /**
@@ -85,25 +98,16 @@ public class FlywayExecutor {
      * Designed so we can fail fast if the SQL file resources are invalid
      */
     private final ResourceNameValidator resourceNameValidator;
-    /**
-     * Used to cache resource names for classpath scanning between commands
-     */
-    private final ResourceNameCache resourceNameCache;
-    /**
-     * Used to cache LocationScanners between commands
-     */
-    private final LocationScannerCache locationScannerCache;
+
     /**
      * Whether the database connection info has already been printed in the logs
      */
     private boolean dbConnectionInfoPrinted;
     private final Configuration configuration;
 
-    public FlywayExecutor(Configuration configuration) {
+    public FlywayExecutor(final Configuration configuration) {
         this.configurationValidator = new ConfigurationValidator();
         this.resourceNameValidator = new ResourceNameValidator();
-        this.resourceNameCache = new ResourceNameCache();
-        this.locationScannerCache = new LocationScannerCache();
         this.configuration = configuration;
     }
 
@@ -111,30 +115,39 @@ public class FlywayExecutor {
      * Executes this command with proper resource handling and cleanup.
      *
      * @param command The command to execute.
-     * @param <T> The type of the result.
+     * @param <T>     The type of the result.
      * @return The result of the command.
      */
-    public <T> T execute(Command<T> command, boolean scannerRequired, FlywayTelemetryManager flywayTelemetryManager) {
+    public <T> T execute(final Command<T> command,
+        final boolean scannerRequired,
+        final FlywayTelemetryManager flywayTelemetryManager) {
+        return execute(command, scannerRequired, flywayTelemetryManager, init());
+    }
+
+    private <T> T execute(final Command<T> command,
+        final boolean scannerRequired,
+        final FlywayTelemetryManager flywayTelemetryManager,
+        final JdbcConnectionFactory jdbcConnectionFactory) {
         T result;
 
-        configurationValidator.validate(configuration);
+        final StatementInterceptor statementInterceptor = configuration.getPluginRegister()
+            .getInstancesOf(StatementInterceptor.class)
+            .stream()
+            .filter(i -> i.isConfigured(configuration))
+            .findFirst()
+            .orElse(null);
 
-        StatementInterceptor statementInterceptor = configuration.getPluginRegister().getPlugins(StatementInterceptor.class).stream()
-                                                                 .filter(i -> i.isConfigured(configuration))
-                                                                 .findFirst()
-                                                                 .orElse(null);
-
-        final Pair<ResourceProvider, ClassProvider<JavaMigration>> resourceProviderClassProviderPair = createResourceAndClassProviders(scannerRequired);
+        final Pair<ResourceProvider, ClassProvider<JavaMigration>> resourceProviderClassProviderPair = createResourceAndClassProviders(
+            scannerRequired);
         final ResourceProvider resourceProvider = resourceProviderClassProviderPair.getLeft();
         final ClassProvider<JavaMigration> classProvider = resourceProviderClassProviderPair.getRight();
         final ParsingContext parsingContext = new ParsingContext();
 
-
-
-
-
-
-        JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(configuration.getDataSource(), configuration, statementInterceptor);
+        final PreConnectCallbackExecutor preConnectCallbackExecutor = new PreConnectCallbackExecutor(resourceProvider,
+            configuration,
+            parsingContext,
+            statementInterceptor);
+        preConnectCallbackExecutor.executeCallbacks();
 
         final DatabaseType databaseType = jdbcConnectionFactory.getDatabaseType();
         final SqlScriptFactory sqlScriptFactory = databaseType.createSqlScriptFactory(configuration, parsingContext);
@@ -144,19 +157,25 @@ public class FlywayExecutor {
         RetryStrategy.setNumberOfRetries(configuration.getLockRetryCount());
 
         final SqlScriptExecutorFactory noCallbackSqlScriptExecutorFactory = databaseType.createSqlScriptExecutorFactory(
-                jdbcConnectionFactory, NoopCallbackExecutor.INSTANCE, null);
+            jdbcConnectionFactory,
+            NoopCallbackExecutor.INSTANCE,
+            null);
 
         jdbcConnectionFactory.setConnectionInitializer((jdbcConnectionFactory1, connection) -> {
             if (configuration.getInitSql() == null) {
                 return;
             }
-            StringResource resource = new StringResource(configuration.getInitSql());
 
-            SqlScript sqlScript = sqlScriptFactory.createSqlScript(resource, true, resourceProvider);
+            printDeprecationNotice(INIT_SQL);
 
-            boolean outputQueryResults = configuration.isOutputQueryResults();
+            final StringResource resource = new StringResource(configuration.getInitSql());
 
-            noCallbackSqlScriptExecutorFactory.createSqlScriptExecutor(connection, false, false, outputQueryResults).execute(sqlScript, configuration);
+            final SqlScript sqlScript = sqlScriptFactory.createSqlScript(resource, true, resourceProvider);
+
+            final boolean outputQueryResults = configuration.isOutputQueryResults();
+
+            noCallbackSqlScriptExecutorFactory.createSqlScriptExecutor(connection, false, false, outputQueryResults)
+                .execute(sqlScript, configuration);
         });
 
         Database database = null;
@@ -170,24 +189,17 @@ public class FlywayExecutor {
                     LOG.info(((CommunityDatabaseType) database.getDatabaseType()).announcementForCommunitySupport());
                 }
 
-                LOG.info("Database: " + redactJdbcUrl(jdbcConnectionFactory.getJdbcUrl()) + " (" + jdbcConnectionFactory.getProductName() + ")");
-                LOG.debug("Database Type: " + database.getDatabaseType().getName());
-                LOG.debug("Driver: " + jdbcConnectionFactory.getDriverInfo());
-
                 if (flywayTelemetryManager != null) {
-                    RootTelemetryModel rootTelemetryModel = flywayTelemetryManager.getRootTelemetryModel();
-                    if (rootTelemetryModel != null) {
-                        rootTelemetryModel.setDatabaseEngine(database.getDatabaseType().getName());
-                        rootTelemetryModel.setDatabaseVersion(database.getVersion().toString());
-                        rootTelemetryModel.setDatabaseHosting(database.getDatabaseHosting());
-                    }
+                    flywayTelemetryManager.notifyDatabaseChanged(database.getDatabaseType().getName(),
+                        database.getVersion().toString(),
+                        configuration.getUrl() != null ? database.getDatabaseHosting() : null);
                 }
             }
 
             LOG.debug("DDL Transactions Supported: " + database.supportsDdlTransactions());
 
-            Pair<Schema, List<Schema>> schemas = SchemaHistoryFactory.prepareSchemas(configuration, database);
-            Schema defaultSchema = schemas.getLeft();
+            final Pair<Schema, List<Schema>> schemas = SchemaHistoryFactory.prepareSchemas(configuration, database);
+            final Schema defaultSchema = schemas.getLeft();
 
             if (statementInterceptor != null) {
                 statementInterceptor.init(configuration, database, defaultSchema.getTable(configuration.getTable()));
@@ -197,27 +209,47 @@ public class FlywayExecutor {
 
             database.ensureSupported(configuration);
 
-            DefaultCallbackExecutor callbackExecutor = new DefaultCallbackExecutor(configuration, database, defaultSchema, flywayTelemetryManager, prepareCallbacks(
-                    database, resourceProvider, jdbcConnectionFactory, sqlScriptFactory, statementInterceptor, defaultSchema, parsingContext, flywayTelemetryManager));
-
-            SqlScriptExecutorFactory sqlScriptExecutorFactory = databaseType.createSqlScriptExecutorFactory(jdbcConnectionFactory, callbackExecutor, statementInterceptor);
-
-            SchemaHistory schemaHistory = SchemaHistoryFactory.getSchemaHistory(
-                    configuration,
-                    noCallbackSqlScriptExecutorFactory,
+            final ResourceProvider callbackResourceProvider = configuration.getCallbackLocations().length > 0
+                ? createScanner(filterOutNonExistentCallbackLocations(configuration.getCallbackLocations()))
+                : resourceProvider;
+            final CallbackExecutor<Event> callbackExecutor = new DefaultCallbackExecutor<>(configuration,
+                database,
+                defaultSchema,
+                flywayTelemetryManager,
+                prepareCallbacks(database,
+                    callbackResourceProvider,
+                    jdbcConnectionFactory,
                     sqlScriptFactory,
-                    database,
+                    statementInterceptor,
                     defaultSchema,
-                    statementInterceptor);
+                    parsingContext,
+                    flywayTelemetryManager));
 
-            result = command.execute(
-                    createMigrationResolver(resourceProvider, classProvider, sqlScriptExecutorFactory, sqlScriptFactory, parsingContext, statementInterceptor),
-                    schemaHistory,
-                    database,
-                    defaultSchema,
-                    schemas.getRight().toArray(new Schema[0]),
-                    callbackExecutor,
-                    statementInterceptor);
+            callbackExecutor.onEvent(AFTER_CONNECT);
+            final SqlScriptExecutorFactory sqlScriptExecutorFactory = databaseType.createSqlScriptExecutorFactory(
+                jdbcConnectionFactory,
+                callbackExecutor,
+                statementInterceptor);
+
+            final SchemaHistory schemaHistory = SchemaHistoryFactory.getSchemaHistory(configuration,
+                noCallbackSqlScriptExecutorFactory,
+                sqlScriptFactory,
+                database,
+                defaultSchema,
+                statementInterceptor);
+
+            result = command.execute(createMigrationResolver(resourceProvider,
+                    classProvider,
+                    sqlScriptExecutorFactory,
+                    sqlScriptFactory,
+                    parsingContext,
+                    statementInterceptor),
+                schemaHistory,
+                database,
+                defaultSchema,
+                schemas.getRight().toArray(Schema[]::new),
+                callbackExecutor,
+                statementInterceptor);
         } finally {
             IOUtils.close(database);
             if (statementInterceptor instanceof AutoCloseable) {
@@ -226,8 +258,8 @@ public class FlywayExecutor {
             showMemoryUsage();
         }
 
-        File permit_file = new File(FileUtils.getAppDataFlywayCLILocation(), "permit");
-        if (LicenseGuard.getTier(configuration) == Tier.COMMUNITY && !permit_file.exists()) {
+        final File permitFile = new File(FileUtils.getAppDataFlywayCLILocation(), "permit");
+        if (LicenseGuard.getTier(configuration) == Tier.COMMUNITY && !permitFile.exists()) {
             LOG.info("");
             LOG.info("You are not signed in to Flyway, to sign in please run auth");
         }
@@ -235,7 +267,32 @@ public class FlywayExecutor {
         return result;
     }
 
-    private Pair<ResourceProvider, ClassProvider<JavaMigration>> createResourceAndClassProviders(boolean scannerRequired) {
+    public JdbcConnectionFactory init() {
+        configurationValidator.validate(configuration);
+
+        final StatementInterceptor statementInterceptor = configuration.getPluginRegister()
+            .getInstancesOf(StatementInterceptor.class)
+            .stream()
+            .filter(i -> i.isConfigured(configuration))
+            .findFirst()
+            .orElse(null);
+
+        final JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(configuration.getDataSource(),
+            configuration,
+            statementInterceptor);
+
+        LOG.info("Database: "
+            + redactJdbcUrl(jdbcConnectionFactory.getJdbcUrl())
+            + " ("
+            + jdbcConnectionFactory.getProductName()
+            + ")");
+        LOG.debug("Database Type: " + jdbcConnectionFactory.getDatabaseType().getName());
+        LOG.debug("Driver: " + jdbcConnectionFactory.getDriverInfo());
+
+        return jdbcConnectionFactory;
+    }
+
+    private Pair<ResourceProvider, ClassProvider<JavaMigration>> createResourceAndClassProviders(final boolean scannerRequired) {
         ResourceProvider resourceProvider;
         ClassProvider<JavaMigration> classProvider;
         if (!scannerRequired && configuration.isSkipDefaultResolvers() && configuration.isSkipDefaultCallbacks()) {
@@ -248,17 +305,7 @@ public class FlywayExecutor {
                 resourceProvider = configuration.getResourceProvider();
                 classProvider = configuration.getJavaMigrationClassProvider();
             } else {
-                boolean stream = false;
-
-
-
-
-                Scanner<JavaMigration> scanner = new Scanner<>(
-                        JavaMigration.class,
-                        stream,
-                        resourceNameCache,
-                        locationScannerCache,
-                        configuration);
+                final Scanner<JavaMigration> scanner = createScanner(configuration.getLocations());
                 // set the defaults
                 resourceProvider = scanner;
                 classProvider = scanner;
@@ -274,12 +321,33 @@ public class FlywayExecutor {
         return Pair.of(resourceProvider, classProvider);
     }
 
-    private List<Callback> prepareCallbacks(Database database, ResourceProvider resourceProvider,
-                                            JdbcConnectionFactory jdbcConnectionFactory,
-                                            SqlScriptFactory sqlScriptFactory, StatementInterceptor statementInterceptor,
-                                            Schema schema, ParsingContext parsingContext, FlywayTelemetryManager flywayTelemetryManager) {
-        List<Callback> effectiveCallbacks = new ArrayList<>();
-        CallbackExecutor callbackExecutor = NoopCallbackExecutor.INSTANCE;
+    private Scanner<JavaMigration> createScanner(final Location[] locations) {
+        return new Scanner<>(JavaMigration.class, configuration, locations);
+    }
+
+    private static Location[] filterOutNonExistentCallbackLocations(final Location[] callbackLocations) {
+        return Arrays.stream(callbackLocations)
+            .filter(location -> {
+                if (CoreLocationPrefix.isFileSystem(location)
+                    && !Files.exists(Path.of(location.getRootPath()))) {
+                    LOG.info("Skipping callback location " + location.getRootPath() + " as it does not exist");
+                    return false;
+                }
+                return true;
+            })
+            .toArray(Location[]::new);
+    }
+
+    private List<GenericCallback<Event>> prepareCallbacks(final Database database,
+        final ResourceProvider resourceProvider,
+        final JdbcConnectionFactory jdbcConnectionFactory,
+        final SqlScriptFactory sqlScriptFactory,
+        final StatementInterceptor statementInterceptor,
+        final Schema schema,
+        final ParsingContext parsingContext,
+        final FlywayTelemetryManager flywayTelemetryManager) {
+        final List<GenericCallback<Event>> effectiveCallbacks = new ArrayList<>();
+        CallbackExecutor<Event> callbackExecutor = NoopCallbackExecutor.INSTANCE;
 
         if (statementInterceptor != null) {
             effectiveCallbacks.addAll(statementInterceptor.getCallbacks());
@@ -287,59 +355,78 @@ public class FlywayExecutor {
 
         effectiveCallbacks.addAll(Arrays.asList(configuration.getCallbacks()));
 
-
-
-
-
-
-
-
-
-
+        final ErrorOverrideInitializer errorOverride = configuration.getPluginRegister()
+            .getInstanceOf(ErrorOverrideInitializer.class);
+        if (configuration.getErrorOverrides().length > 0) {
+            errorOverride.setCallback(configuration.getErrorOverrides());
+            callbackExecutor = errorOverride.getCallbackExecutor(configuration,
+                database,
+                schema,
+                flywayTelemetryManager);
+        }
 
         LOG.debug("Scanning for script callbacks ...");
-        ScriptMigrationResolver scriptMigrationResolver = new ScriptMigrationResolver(resourceProvider, configuration, parsingContext, statementInterceptor);
-        scriptMigrationResolver.resolveCallbacks();
+        final ScriptMigrationResolver<Event> scriptMigrationResolver = new ScriptMigrationResolver<>(resourceProvider,
+            configuration,
+            parsingContext,
+            statementInterceptor);
+        scriptMigrationResolver.resolveCallbacks((String id) -> Optional.ofNullable(Event.fromId(id)));
         effectiveCallbacks.addAll(scriptMigrationResolver.scriptCallbacks);
 
         if (!configuration.isSkipDefaultCallbacks()) {
-            SqlScriptExecutorFactory sqlScriptExecutorFactory = jdbcConnectionFactory.getDatabaseType().createSqlScriptExecutorFactory(
-                    jdbcConnectionFactory, callbackExecutor, statementInterceptor);
+            final SqlScriptExecutorFactory sqlScriptExecutorFactory = jdbcConnectionFactory.getDatabaseType()
+                .createSqlScriptExecutorFactory(jdbcConnectionFactory, callbackExecutor, statementInterceptor);
 
-            effectiveCallbacks.addAll(new SqlScriptCallbackFactory(resourceProvider, sqlScriptExecutorFactory, sqlScriptFactory, configuration).getCallbacks());
+            effectiveCallbacks.addAll(new SqlScriptCallbackFactory<>(resourceProvider,
+                sqlScriptExecutorFactory,
+                sqlScriptFactory,
+                configuration,
+                (String id) -> Optional.ofNullable(Event.fromId(id))).getCallbacks());
         }
 
-
-
-
-
-
+        if (!(errorOverride.getCallback() instanceof NoopCallback)) {
+            effectiveCallbacks.add(errorOverride.getCallback());
+        }
 
         if (effectiveCallbacks.stream().anyMatch(x -> x.supports(CREATE_SCHEMA, null))) {
-            LOG.warn("'createSchema' callback is deprecated and will be removed in a later release. Please use 'beforeCreateSchema' callback instead.");
+            printDeprecationNotice(DeprecatedFeatures.CREATE_SCHEMA);
         }
+
+        @SuppressWarnings("unchecked") final var internalCallbacks = configuration.getPluginRegister()
+            .getInstancesOf(InternalCallback.class)
+            .stream()
+            .filter(x -> x.supportsEventType(Event.class))
+            .map(x -> (GenericCallback<Event>) x)
+            .toList();
+        effectiveCallbacks.addAll(internalCallbacks);
 
         return effectiveCallbacks;
     }
 
-    private CompositeMigrationResolver createMigrationResolver(ResourceProvider resourceProvider,
-                                                      ClassProvider<JavaMigration> classProvider,
-                                                      SqlScriptExecutorFactory sqlScriptExecutorFactory,
-                                                      SqlScriptFactory sqlScriptFactory,
-                                                      ParsingContext parsingContext,
-                                                      StatementInterceptor statementInterceptor) {
-        return new CompositeMigrationResolver(resourceProvider, classProvider, configuration, sqlScriptExecutorFactory, sqlScriptFactory, parsingContext, statementInterceptor, configuration.getResolvers());
+    private CompositeMigrationResolver createMigrationResolver(final ResourceProvider resourceProvider,
+        final ClassProvider<JavaMigration> classProvider,
+        final SqlScriptExecutorFactory sqlScriptExecutorFactory,
+        final SqlScriptFactory sqlScriptFactory,
+        final ParsingContext parsingContext,
+        final StatementInterceptor statementInterceptor) {
+        return new CompositeMigrationResolver(resourceProvider,
+            classProvider,
+            configuration,
+            sqlScriptExecutorFactory,
+            sqlScriptFactory,
+            parsingContext,
+            statementInterceptor,
+            configuration.getResolvers());
     }
 
     private void showMemoryUsage() {
-        Runtime runtime = Runtime.getRuntime();
-        long free = runtime.freeMemory();
-        long total = runtime.totalMemory();
-        long used = total - free;
+        final Runtime runtime = Runtime.getRuntime();
+        final long free = runtime.freeMemory();
+        final long total = runtime.totalMemory();
+        final long used = total - free;
 
-        long totalMB = MEGABYTE.fromBytes(total);
-        long usedMB = MEGABYTE.fromBytes(used);
+        final long totalMB = MEGABYTE.fromBytes(total);
+        final long usedMB = MEGABYTE.fromBytes(used);
         LOG.debug("Memory usage: " + usedMB + " of " + totalMB + "M");
     }
-
 }

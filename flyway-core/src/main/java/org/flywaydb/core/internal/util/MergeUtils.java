@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class MergeUtils {
                     V mergedValue = mergeFn.apply(primary.get(key), overrides.get(key));
                     result.replace(key, mergedValue);
                 } else {
-                    result.put(key, overrides.get(key));
+                    result.put(key, mergeFn.apply(overrides.get(key), overrides.get(key)));
                 }
             }
         }

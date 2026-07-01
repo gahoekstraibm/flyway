@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-postgresql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@
  */
 package org.flywaydb.database.cockroachdb;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.MigrationVersion;
-import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.flywaydb.core.api.configuration.Configuration;
-import org.flywaydb.core.internal.database.DatabaseTypeRegister;
+import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Table;
 import org.flywaydb.core.internal.exception.FlywaySqlException;
@@ -40,7 +42,7 @@ public class CockroachDBDatabase extends Database<CockroachDBConnection> {
 
     public CockroachDBDatabase(Configuration configuration, JdbcConnectionFactory jdbcConnectionFactory, StatementInterceptor statementInterceptor) {
         super(configuration, jdbcConnectionFactory, statementInterceptor);
-        this.determinedVersion = rawDetermineVersion(configuration);
+        this.determinedVersion = rawDetermineVersion(jdbcConnectionFactory.getDatabaseType());
     }
 
     @Override
@@ -51,7 +53,7 @@ public class CockroachDBDatabase extends Database<CockroachDBConnection> {
     @Override
     public void ensureSupported(Configuration configuration) {
         ensureDatabaseIsRecentEnough("1.1");
-        recommendFlywayUpgradeIfNecessary("22.1");
+        recommendFlywayUpgradeIfNecessary("26.1");
     }
 
     @Override
@@ -72,15 +74,19 @@ public class CockroachDBDatabase extends Database<CockroachDBConnection> {
                 "CREATE INDEX IF NOT EXISTS \"" + table.getName() + "_s_idx\" ON " + table + " (\"success\");";
     }
 
-    private MigrationVersion rawDetermineVersion(Configuration configuration) {
-        String version;
+    private MigrationVersion rawDetermineVersion(DatabaseType databaseType) {
+        final String version;
         try {
             // Use rawMainJdbcConnection to avoid infinite recursion.
-            JdbcTemplate template = new JdbcTemplate(rawMainJdbcConnection, DatabaseTypeRegister.getDatabaseTypeForConnection(rawMainJdbcConnection, configuration));
-            version = template.queryForString("SELECT value FROM crdb_internal.node_build_info where field='Version'");
-            if (version == null) {
-                version = template.queryForString("SELECT value FROM crdb_internal.node_build_info where field='Tag'");
+            final JdbcTemplate template = new JdbcTemplate(rawMainJdbcConnection, databaseType);
+            final String versionString = template.queryForString("SELECT version()");
+            final Pattern versionPattern = Pattern.compile("v\\S+");
+            final Matcher matcher = versionPattern.matcher(versionString);
+            if (!matcher.find()) {
+                throw new FlywayException("Unable to determine CockroachDB version");
             }
+            version = matcher.group();
+
         } catch (SQLException e) {
             throw new FlywaySqlException("Unable to determine CockroachDB version", e);
         }

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,20 +152,47 @@ public class ClassUtils {
     }
 
     public static String getLibDir(Class<?> clazz) {
-        String classLocation = Objects.requireNonNull(ClassUtils.getLocationOnDisk(clazz));
-        return new File(classLocation)  // jar file
-                .getParentFile()        // edition dir
-                .getParentFile()        // lib dir
-                .getAbsolutePath();
+        String classLocation = ClassUtils.getLocationOnDisk(clazz);
+
+        // Edge case: if Flyway cannot determine the class location, fall back to a best-effort guess
+        if (classLocation == null) {
+            return System.getProperty("user.dir", ".");
+        }
+
+        File jarFile = new File(classLocation);
+        File editionDir = jarFile.getParentFile();
+        if (editionDir == null) {
+            return jarFile.getAbsolutePath();
+        }
+        File libDir = editionDir.getParentFile();
+        if (libDir == null) {
+            return editionDir.getAbsolutePath();
+        }
+        return libDir.getAbsolutePath();
     }
 
     public static String getInstallDir(Class<?> clazz) {
-        String path = Objects.requireNonNull(ClassUtils.getLocationOnDisk(clazz));
-        return new File(path)    // jar file
-                .getParentFile() // edition dir
-                .getParentFile() // lib dir
-                .getParentFile() // installation dir
-                .getAbsolutePath();
+        String path = ClassUtils.getLocationOnDisk(clazz);
+
+        // Edge case: if Flyway cannot determine the class location, fall back to a best-effort guess
+        if (path == null) {
+            return System.getProperty("user.dir", ".");
+        }
+
+        File jarFile = new File(path);
+        File editionDir = jarFile.getParentFile();
+        if (editionDir == null) {
+            return jarFile.getAbsolutePath();
+        }
+        File libDir = editionDir.getParentFile();
+        if (libDir == null) {
+            return editionDir.getAbsolutePath();
+        }
+        File installDir = libDir.getParentFile();
+        if (installDir == null) {
+            return libDir.getAbsolutePath();
+        }
+        return installDir.getAbsolutePath();
     }
 
     /**
@@ -184,7 +211,7 @@ public class ClassUtils {
                 throw new FlywayException("Unable to load " + jarFile.getPath(), e);
             }
         }
-        return new URLClassLoader(urls.toArray(new URL[0]), classLoader);
+        return new URLClassLoader(urls.toArray(URL[]::new), classLoader);
     }
 
     /**

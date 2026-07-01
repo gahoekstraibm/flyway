@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-mysql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 package org.flywaydb.database.mysql.mariadb;
+
+import static org.flywaydb.core.internal.util.UrlUtils.isSecretManagerUrl;
 
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
@@ -54,24 +56,11 @@ public class MariaDBDatabaseType extends BaseDatabaseType {
 
     @Override
     public boolean handlesJDBCUrl(String url) {
-        if (url.startsWith("jdbc-secretsmanager:mariadb:")) {
-
-
-
-
-            throw new FlywayEditionUpgradeRequiredException(Tier.ENTERPRISE, (Tier) null, "jdbc-secretsmanager");
-
-        }
-        return url.startsWith("jdbc:mariadb:") || url.startsWith("jdbc:p6spy:mariadb:");
+        return isSecretManagerUrl(url, "mariadb") || url.startsWith("jdbc:mariadb:") || url.startsWith("jdbc:p6spy:mariadb:");
     }
 
     @Override
     public String getDriverClass(String url, ClassLoader classLoader) {
-
-
-
-
-
         if (url.startsWith("jdbc:p6spy:mariadb:")) {
             return "com.p6spy.engine.spy.P6SpyDriver";
         }
@@ -100,16 +89,5 @@ public class MariaDBDatabaseType extends BaseDatabaseType {
     @Override
     public void setDefaultConnectionProps(String url, Properties props, ClassLoader classLoader) {
         props.put("connectionAttributes", "program_name:" + APPLICATION_NAME);
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-
-
-
-
-
-
-        return super.detectPasswordRequiredByUrl(url);
     }
 }

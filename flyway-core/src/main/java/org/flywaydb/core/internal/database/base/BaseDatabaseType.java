@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import lombok.CustomLog;
 import org.flywaydb.core.api.ResourceProvider;
+import org.flywaydb.core.api.callback.Event;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.internal.callback.CallbackExecutor;
 import org.flywaydb.core.internal.database.DatabaseExecutionStrategy;
@@ -41,15 +42,12 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import org.flywaydb.core.internal.util.StringUtils;
-
-import static org.flywaydb.core.internal.database.DatabaseTypeRegister.redactJdbcUrl;
 import static org.flywaydb.core.internal.sqlscript.SqlScriptMetadata.getMetadataResource;
 
 @CustomLog
 public abstract class BaseDatabaseType implements DatabaseType {
     // Don't grab semicolons and ampersands - they have special meaning in URLs
-    private static final Pattern defaultJdbcCredentialsPattern = Pattern.compile("password=([^;&]*).*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern defaultJdbcCredentialsPattern = Pattern.compile("[;&?]password=([^;&]*)(?=[;&])?", Pattern.CASE_INSENSITIVE);
     private static final Pattern hostJdbcCredentialsPattern = Pattern.compile("(?:jdbc:)?[^:]+://[^:]+:([^@]+)@.*", Pattern.CASE_INSENSITIVE);
 
     /**
@@ -116,8 +114,8 @@ public abstract class BaseDatabaseType implements DatabaseType {
      * Gets a regex that identifies credentials in the JDBC URL, where they conform to the default URL pattern.
      * The first captured group represents the password text.
      */
-    public static Pattern getDefaultJDBCCredentialsPattern() {
-        return defaultJdbcCredentialsPattern;
+    public static List<Pattern> getDefaultJDBCCredentialsPatterns() {
+        return List.of(defaultJdbcCredentialsPattern, hostJdbcCredentialsPattern);
     }
 
     /**
@@ -151,7 +149,7 @@ public abstract class BaseDatabaseType implements DatabaseType {
     }
 
     public SqlScriptExecutorFactory createSqlScriptExecutorFactory(final JdbcConnectionFactory jdbcConnectionFactory,
-                                                                   final CallbackExecutor callbackExecutor,
+                                                                   final CallbackExecutor<Event> callbackExecutor,
                                                                    final StatementInterceptor statementInterceptor) {
         final DatabaseType thisRef = this;
 
@@ -229,6 +227,7 @@ public abstract class BaseDatabaseType implements DatabaseType {
      * Detects whether a user is required from configuration. This may not be the case if the driver supports
      * other authentication mechanisms, or supports the user being encoded in the URL.
      */
+    @Deprecated
     public boolean detectUserRequiredByUrl(String url) {
         return true;
     }
@@ -237,9 +236,11 @@ public abstract class BaseDatabaseType implements DatabaseType {
      * Detects whether a password is required from configuration. This may not be the case if the driver supports
      * other authentication mechanisms, or supports the password being encoded in the URL.
      */
+    @Deprecated
     public boolean detectPasswordRequiredByUrl(String url) {
         return true;
     }
+
 
     public boolean externalAuthPropertiesRequired(String url, String username, String password) {
         return false;

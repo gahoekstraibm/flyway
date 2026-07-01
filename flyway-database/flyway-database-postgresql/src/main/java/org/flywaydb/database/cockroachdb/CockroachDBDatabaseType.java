@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-postgresql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package org.flywaydb.database.cockroachdb;
 
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
-import org.flywaydb.core.internal.authentication.postgres.PgpassFileReader;
+import org.flywaydb.database.postgresql.authentication.PgpassFileReader;
 
 import org.flywaydb.core.internal.database.DatabaseExecutionStrategy;
 import org.flywaydb.core.internal.database.DefaultExecutionStrategy;
@@ -118,33 +118,29 @@ public class CockroachDBDatabaseType extends BaseDatabaseType {
         props.put("applicationName", BaseDatabaseType.APPLICATION_NAME);
     }
 
-    @Override
-    public boolean detectUserRequiredByUrl(String url) {
-        return !url.contains("user=");
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-        // Postgres supports password in URL
-        return !url.contains("password=");
-    }
-
-    @Override
-    public boolean externalAuthPropertiesRequired(String url, String username, String password) {
-
-        return super.externalAuthPropertiesRequired(url, username, password);
 
 
 
 
-    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Override
     public Properties getExternalAuthProperties(String url, String username) {
         PgpassFileReader pgpassFileReader = new PgpassFileReader();
 
         if (pgpassFileReader.getPgpassFilePath() != null) {
-            LOG.info(org.flywaydb.core.internal.license.FlywayTeamsUpgradeMessage.generate(
+            LOG.info(org.flywaydb.core.internal.license.FlywayUpgradeMessage.generate(
                     "pgpass file '" + pgpassFileReader.getPgpassFilePath() + "'",
                     "use this for database authentication"));
         }

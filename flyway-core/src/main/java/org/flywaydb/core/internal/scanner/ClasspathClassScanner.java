@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@
  */
 package org.flywaydb.core.internal.scanner;
 
-import org.flywaydb.core.api.Location;
-import org.flywaydb.core.api.resource.LoadableResource;
-import org.flywaydb.core.internal.scanner.classpath.ClassPathScanner;
-
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import org.flywaydb.core.api.CoreLocationPrefix;
+import org.flywaydb.core.api.locations.LocationParser;
+import org.flywaydb.core.api.resource.LoadableResource;
+import org.flywaydb.core.internal.scanner.classpath.ClassPathScanner;
+import org.flywaydb.core.internal.scanner.classpath.ResourceAndClassScanner;
 
 public class ClasspathClassScanner {
     private final ResourceNameCache resourceNameCache = new ResourceNameCache();
@@ -33,16 +34,22 @@ public class ClasspathClassScanner {
 
     private final ClassLoader classLoader;
 
-    public ClasspathClassScanner(ClassLoader classLoader) {
+    public ClasspathClassScanner(final ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
-    public List<String> scanForType(String location, Class<?> classType, boolean errorOnNotFound) {
-        ClassPathScanner<?> s = new ClassPathScanner<>(classType, classLoader, Charset.defaultCharset(), new Location("classpath:" + location),
-                                                       resourceNameCache, locationScannerCache, errorOnNotFound, false);
+    public List<String> scanForType(final String location, final Class<?> classType, final boolean errorOnNotFound) {
+        final ResourceAndClassScanner<?> s = new ClassPathScanner<>(classType,
+            classLoader,
+            Charset.defaultCharset(),
+            LocationParser.parseLocation(CoreLocationPrefix.CLASSPATH_PREFIX + location),
+            resourceNameCache,
+            locationScannerCache,
+            errorOnNotFound,
+            false);
 
-        List<String> discoveredTypes = new ArrayList<>();
-        for (LoadableResource resource : s.scanForResources()) {
+        final List<String> discoveredTypes = new ArrayList<>();
+        for (final LoadableResource resource : s.scanForResources()) {
             if (resource.getAbsolutePath().endsWith(".class")) {
 
                 discoveredTypes.add(toClassName(resource.getAbsolutePath()));
@@ -52,8 +59,8 @@ public class ClasspathClassScanner {
         return discoveredTypes;
     }
 
-    private String toClassName(String resourceName) {
-        String nameWithDots = resourceName.replace("/", ".");
+    private String toClassName(final String resourceName) {
+        final String nameWithDots = resourceName.replace("/", ".");
         return nameWithDots.substring(0, (nameWithDots.length() - ".class".length()));
     }
 }

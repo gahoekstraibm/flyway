@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,7 @@ public abstract class Schema<D extends Database, T extends Table> {
                 types.add(getType(resultSet.getString("TYPE_NAME")));
             }
 
-            return types.toArray(new Type[0]);
+            return types.toArray(Type[]::new);
         } catch (SQLException e) {
             throw new FlywaySqlException("Unable to retrieve all types in schema " + this, e);
         } finally {

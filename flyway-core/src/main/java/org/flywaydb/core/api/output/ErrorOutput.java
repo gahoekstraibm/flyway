@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,74 +19,34 @@
  */
 package org.flywaydb.core.api.output;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import org.flywaydb.core.api.ErrorCode;
-import org.flywaydb.core.api.CoreErrorCode;
-import org.flywaydb.core.api.FlywayException;
+import lombok.CustomLog;
+import org.flywaydb.core.api.output.errors.ErrorOutputItem;
+import org.flywaydb.core.api.output.errors.ExceptionToErrorObjectConverter;
+import org.flywaydb.core.api.output.errors.FaultToErrorObjectConverter;
+import org.flywaydb.core.api.output.errors.FlywayExceptionToErrorObjectConverter;
+import org.flywaydb.core.api.output.errors.FlywayMigrateExceptionToErrorObjectConverter;
+import org.flywaydb.core.api.output.errors.FlywaySqlExceptionToErrorObjectConverter;
+import org.flywaydb.core.api.output.errors.ObsoleteConfigurationParametersExceptionToErrorObjectConverter;
 import org.flywaydb.core.internal.exception.FlywayMigrateException;
-import org.flywaydb.core.internal.sqlscript.FlywaySqlScriptException;
+import org.flywaydb.core.internal.plugin.PluginRegister;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-
-public class ErrorOutput implements OperationResult {
-
-    @AllArgsConstructor(access = AccessLevel.PACKAGE)
-    public static class ErrorOutputItem {
-        public ErrorCode errorCode;
-        public String message;
-        public String stackTrace;
-        public Integer lineNumber;
-        public String path;
-        public ErrorCause cause;
-    }
-
-    public record ErrorCause(String message, String stackTrace, ErrorCause cause) {
-    }
-
-    public ErrorOutputItem error;
-
-    public ErrorOutput(final ErrorCode errorCode, final String message, final String stackTrace,
-        final Integer lineNumber, final String path, final ErrorCause cause) {
-        this.error = new ErrorOutputItem(errorCode, message, stackTrace, lineNumber, path, cause);
-    }
+@CustomLog
+public record ErrorOutput(ErrorOutputItem error) implements OperationResult {
+    private static final PluginRegister PLUGIN_REGISTER = new PluginRegister();
+    private static final Collection<ExceptionToErrorObjectConverter<? extends Exception, ? extends ErrorOutputItem>> CORE_ERROR_OBJECT_CONVERTERS = List.of(
+        new FlywayMigrateExceptionToErrorObjectConverter(),
+        new FlywaySqlExceptionToErrorObjectConverter(),
+        new ObsoleteConfigurationParametersExceptionToErrorObjectConverter(),
+        new FlywayExceptionToErrorObjectConverter());
 
     public static ErrorOutput fromException(final Exception exception) {
-        final String message = exception.getMessage();
+        final ExceptionToErrorObjectConverter<? extends Exception, ? extends ErrorOutputItem> converter = findPluginErrorOutputConverter(
+            exception).orElse(useCoreErrorOutputConverter(exception));
 
-        if (exception instanceof final FlywayMigrateException flywayMigrateException &&
-            flywayMigrateException.getAbsolutePathOnDisk() != null) {
-
-            return new ErrorOutput(
-                flywayMigrateException.getMigrationErrorCode(),
-                message == null ? "Error occurred" : message,
-                null,
-                flywayMigrateException.getLineNumber(),
-                flywayMigrateException.getAbsolutePathOnDisk(),
-                getCause(exception).orElse(null));
-        }
-
-        if (exception instanceof final FlywayException flywayException) {
-
-            return new ErrorOutput(
-                flywayException.getErrorCode(),
-                message == null ? "Error occurred" : message,
-                null,
-                null,
-                null,
-                getCause(exception).orElse(null));
-        }
-
-        return new ErrorOutput(
-            CoreErrorCode.FAULT,
-            message == null ? "Fault occurred" : message,
-            getStackTrace(exception),
-            null,
-            null,
-            getCause(exception).orElse(null));
+        return new ErrorOutput(convertException(converter, exception));
     }
 
     public static MigrateErrorResult fromMigrateException(final FlywayMigrateException exception) {
@@ -101,19 +61,29 @@ public class ErrorOutput implements OperationResult {
         }
     }
 
-    private static String getStackTrace(final Throwable exception) {
-        final ByteArrayOutputStream output = new ByteArrayOutputStream();
-        final PrintStream printStream;
-
-        printStream = new PrintStream(output, true, StandardCharsets.UTF_8);
-
-        exception.printStackTrace(printStream);
-
-        return output.toString(StandardCharsets.UTF_8);
+    private static Optional<ExceptionToErrorObjectConverter<?, ?>> findPluginErrorOutputConverter(final Exception exception) {
+        try {
+            return PLUGIN_REGISTER.getInstancesOf(ExceptionToErrorObjectConverter.class)
+                .stream()
+                .filter(x -> x.getSupportedExceptionType().isInstance(exception))
+                .findFirst()
+                .map(x -> (ExceptionToErrorObjectConverter<?, ?>) x);
+        } catch (final Exception e) {
+            LOG.error("Error retrieving plugin error converters", e);
+            return Optional.empty();
+        }
     }
 
-    private static Optional<ErrorCause> getCause(final Throwable e) {
-        return Optional.ofNullable(e.getCause())
-            .map(cause -> new ErrorCause(cause.getMessage(), getStackTrace(cause), getCause(cause).orElse(null)));
+    private static ExceptionToErrorObjectConverter<? extends Exception, ? extends ErrorOutputItem> useCoreErrorOutputConverter(
+        final Exception exception) {
+        return CORE_ERROR_OBJECT_CONVERTERS.stream()
+            .filter(x -> x.getSupportedExceptionType().isInstance(exception))
+            .findFirst()
+            .orElse(new FaultToErrorObjectConverter());
+    }
+
+    private static <E extends Exception, T extends ErrorOutputItem> T convertException(final ExceptionToErrorObjectConverter<E, T> converter,
+        final Exception exception) {
+        return converter.convert(converter.getSupportedExceptionType().cast(exception));
     }
 }

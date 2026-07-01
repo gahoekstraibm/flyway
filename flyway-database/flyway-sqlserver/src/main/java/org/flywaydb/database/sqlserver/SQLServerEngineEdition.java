@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-sqlserver
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package org.flywaydb.database.sqlserver;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.flywaydb.core.api.FlywayException;
 
 /*
  * SQL Server engine editions. Some restrict the functionality available. See
@@ -37,7 +38,9 @@ public enum SQLServerEngineEdition {
     SQL_DATABASE(5),
     SQL_DATA_WAREHOUSE(6),
     MANAGED_INSTANCE(8),
-    AZURE_SQL_EDGE(9);
+    AZURE_SQL_EDGE(9),
+    SYNAPSE_SERVERLESS_POOLS(11),
+    FABRIC(12);
 
     @Getter
     private final int code;

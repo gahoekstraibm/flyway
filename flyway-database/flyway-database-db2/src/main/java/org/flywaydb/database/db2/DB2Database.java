@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-db2
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class DB2Database extends Database<DB2Connection> {
                 ")" + (getVersion().isAtLeast("10.5") ? "" : " ORGANIZE BY ROW")
                 + tablespace + ";\n" +
                 "ALTER TABLE " + table + " ADD CONSTRAINT \"" + table.getName() + "_pk\" PRIMARY KEY (\"installed_rank\");\n" +
-                "CREATE INDEX \"" + table.getSchema().getName() + "\".\"" + table.getName() + "_s_idx\" ON " + table + " (\"success\");" +
+                "CREATE INDEX \"" + table.getSchema().getName() + "\".\"" + table.getName() + "_s_idx\" ON " + table + " (\"success\") " + tablespace + ";" +
                 (baseline ? getBaselineStatement(table) + ";\n" : "");
     }
 

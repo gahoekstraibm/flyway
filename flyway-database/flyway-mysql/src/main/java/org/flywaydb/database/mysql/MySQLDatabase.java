@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-mysql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,20 +249,7 @@ public class MySQLDatabase extends Database<MySQLConnection> {
 
         ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("8.0", Tier.PREMIUM, configuration);
 
-
-
-
-
-
-
-
-
-
-
-
-
-        recommendFlywayUpgradeIfNecessary("8.1");
-
+        recommendFlywayUpgradeIfNecessary("9.4");
     }
 
     @Override

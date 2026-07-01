@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@ public class CleanExecutor {
     protected final Connection connection;
     protected final Database database;
     protected final SchemaHistory schemaHistory;
-    protected final CallbackExecutor callbackExecutor;
+    protected final CallbackExecutor<Event> callbackExecutor;
 
-    public CleanExecutor(Connection connection, Database database, SchemaHistory schemaHistory, CallbackExecutor callbackExecutor) {
+    public CleanExecutor(Connection connection, Database database, SchemaHistory schemaHistory, CallbackExecutor<Event> callbackExecutor) {
         this.connection = connection;
         this.database = database;
         this.schemaHistory = schemaHistory;
@@ -85,9 +85,9 @@ public class CleanExecutor {
                 i++;
             }
         }
-        cleanSchemas(schemaList.toArray(new Schema[0]), dropSchemas, cleanResult);
+        cleanSchemas(schemaList.toArray(Schema[]::new), dropSchemas, cleanResult);
         Collections.reverse(schemaList);
-        cleanSchemas(schemaList.toArray(new Schema[0]), dropSchemas, null);
+        cleanSchemas(schemaList.toArray(Schema[]::new), dropSchemas, null);
 
         dropDatabaseObjectsPostSchemas(schemas);
 
@@ -103,7 +103,7 @@ public class CleanExecutor {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         try {
-            ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database).execute(() -> {
+            ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database, true).execute(() -> {
                 database.cleanPreSchemas();
                 return null;
             });
@@ -121,7 +121,7 @@ public class CleanExecutor {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         try {
-            ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database).execute(() -> {
+            ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database, true).execute(() -> {
                 database.cleanPostSchemas(schemas);
                 return null;
             });
@@ -139,7 +139,7 @@ public class CleanExecutor {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         try {
-            ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database).execute(() -> {
+            ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database, true).execute(() -> {
                 schema.drop();
                 return null;
             });
@@ -182,7 +182,7 @@ public class CleanExecutor {
     }
 
     protected void doCleanSchema(Schema schema) {
-        ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database).execute(() -> {
+        ExecutionTemplateFactory.createExecutionTemplate(connection.getJdbcConnection(), database, true).execute(() -> {
             schema.clean();
             return null;
         });

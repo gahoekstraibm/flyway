@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-gcp-bigquery
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +138,12 @@ public class BigQueryParser extends Parser {
             context.increaseBlockDepth(keywordText);
         }
 
+        if ("THEN".equalsIgnoreCase(keywordText) 
+            && !tokens.isEmpty() 
+            && tokens.stream().anyMatch(x -> "IF".equalsIgnoreCase(x.getText()))) {
+            context.increaseBlockDepth(keywordText);
+        }
+
         if (lastTokenIs(tokens, parensDepth, "BEGIN") &&
                 ("TRANSACTION".equalsIgnoreCase(keywordText) || ";".equalsIgnoreCase(keywordText))
                 && context.getBlockDepth() > 0) {
@@ -145,7 +151,6 @@ public class BigQueryParser extends Parser {
         }
 
         if (lastTokenIs(tokens, parensDepth, "END")
-                && !"IF".equalsIgnoreCase(keywordText)
                 && !"WHILE".equalsIgnoreCase(keywordText)
                 && !"LOOP".equalsIgnoreCase(keywordText)
                 && !"AS".equalsIgnoreCase(keywordText)

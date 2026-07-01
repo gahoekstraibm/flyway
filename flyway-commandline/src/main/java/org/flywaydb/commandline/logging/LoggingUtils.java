@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-commandline
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,10 @@ import org.flywaydb.commandline.logging.file.FileLogCreator;
 import org.flywaydb.core.api.logging.Log;
 import org.flywaydb.core.api.logging.LogCreator;
 import org.flywaydb.core.api.logging.LogFactory;
+import org.flywaydb.core.internal.logging.JsonLogCreator;
 import org.flywaydb.core.internal.logging.multi.MultiLogCreator;
+import org.flywaydb.mcp.McpCommandExtension;
+import org.flywaydb.mcp.McpServerLogCreator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +38,16 @@ import java.util.List;
 public class LoggingUtils {
 
     public static LogCreator getLogCreator(CommandLineArguments commandLineArguments) {
+        if (commandLineArguments.hasOperation(McpCommandExtension.MCP_VERB)) {
+            return new McpServerLogCreator();
+        }
+
         // JSON output uses a different mechanism, so we do not create any loggers
-        if (commandLineArguments.shouldOutputJson() || (commandLineArguments.hasOperation("info") && commandLineArguments.isFilterOnMigrationIds())) {
+        if (commandLineArguments.shouldOutputJson()) {
+            return new JsonLogCreator();
+        }
+
+        if (commandLineArguments.hasOperation("info") && commandLineArguments.isFilterOnMigrationIds()) {
             return MultiLogCreator.empty();
         }
 

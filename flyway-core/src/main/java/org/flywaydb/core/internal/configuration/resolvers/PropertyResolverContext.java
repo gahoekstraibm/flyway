@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,31 @@
  */
 package org.flywaydb.core.internal.configuration.resolvers;
 
+import java.util.Collection;
+import org.flywaydb.core.FlywayTelemetryManager;
 import org.flywaydb.core.ProgressLogger;
 import org.flywaydb.core.api.configuration.Configuration;
 
-import java.util.List;
 import org.flywaydb.core.extensibility.ConfigurationExtension;
 
 public interface PropertyResolverContext {
     Configuration getConfiguration();
+
+    default FlywayTelemetryManager getTelemetryManager() {
+        return null;
+    }
+
     String getWorkingDirectory();
+
     String getEnvironmentName();
+
     String resolveValue(String input, ProgressLogger progress);
+
     String resolveValueOrThrow(String input, ProgressLogger progress, String propertyName);
-    List<String> resolveValues(List<String> input, ProgressLogger progress);
-    List<String> resolveValuesOrThrow(List<String> input, ProgressLogger progress, String propertyName);
+
+    Collection<String> resolveValues(Collection<String> input, ProgressLogger progress);
+
     ConfigurationExtension getResolverConfiguration(String resolverName);
 
+    ConfigurationExtension getResolverConfigurationOrThrow(String resolverName);
 }

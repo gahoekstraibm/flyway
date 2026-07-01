@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,9 +163,9 @@ public abstract class Database<C extends Connection> implements Closeable {
     }
 
     private void recommendFlywayUpgrade(String newestSupportedVersion) {
-        String message = "Flyway upgrade recommended: " + databaseType + " " + computeVersionDisplayName(getVersion())
-                + " is newer than this version of Flyway and support has not been tested."
-                + " The latest supported version of " + databaseType + " is " + newestSupportedVersion + ".";
+        String message = "Using " + databaseType + " " + computeVersionDisplayName(getVersion())
+            + " which is newer than the version Flyway has been verified with."
+            + " The latest verified version of " + databaseType + " is " + newestSupportedVersion + ".";
         LOG.warn(message);
     }
 

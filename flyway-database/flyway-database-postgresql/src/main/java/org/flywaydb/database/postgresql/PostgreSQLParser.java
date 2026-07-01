@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-postgresql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,11 +71,15 @@ public class PostgreSQLParser extends Parser {
     protected void adjustBlockDepth(ParserContext context, List<Token> tokens, Token keyword, PeekingReader reader) {
         String keywordText = keyword.getText();
 
-        if (Parser.lastTokenIs(tokens, context.getParensDepth(), "BEGIN") && "ATOMIC".equalsIgnoreCase(keywordText)) {
+        if (lastTokenIs(tokens, context.getParensDepth(), "BEGIN") && "ATOMIC".equalsIgnoreCase(keywordText)) {
             context.increaseBlockDepth("ATOMIC");
         }
+        if ("CASE".equalsIgnoreCase(keywordText) && "ATOMIC".equals(context.getBlockInitiator())) {
+            context.increaseBlockDepth("CASE");
+        }
 
-        if (context.getBlockDepth() > 0 &&  keywordText.equalsIgnoreCase("END") && "ATOMIC".equals(context.getBlockInitiator())) {
+        if (context.getBlockDepth() > 0 &&  "END".equalsIgnoreCase(keywordText) &&
+            ("ATOMIC".equals(context.getBlockInitiator()) || "CASE".equals(context.getBlockInitiator()))) {
             context.decreaseBlockDepth();
         }
     }

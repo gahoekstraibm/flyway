@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-db2
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 package org.flywaydb.database.db2;
+
+import static org.flywaydb.core.internal.util.UrlUtils.isSecretManagerUrl;
 
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
@@ -47,24 +49,11 @@ public class DB2DatabaseType extends BaseDatabaseType {
 
     @Override
     public boolean handlesJDBCUrl(String url) {
-        if (url.startsWith("jdbc-secretsmanager:db2:")) {
-
-
-
-
-            throw new FlywayEditionUpgradeRequiredException(Tier.ENTERPRISE, (Tier) null, "jdbc-secretsmanager");
-
-        }
-        return url.startsWith("jdbc:db2:") || url.startsWith("jdbc:p6spy:db2:");
+        return isSecretManagerUrl(url, "db2") || url.startsWith("jdbc:db2:") || url.startsWith("jdbc:p6spy:db2:");
     }
 
     @Override
     public String getDriverClass(String url, ClassLoader classLoader) {
-
-
-
-
-
         if (url.startsWith("jdbc:p6spy:db2:")) {
             return "com.p6spy.engine.spy.P6SpyDriver";
         }
@@ -90,16 +79,5 @@ public class DB2DatabaseType extends BaseDatabaseType {
     public void setDefaultConnectionProps(String url, Properties props, ClassLoader classLoader) {
         props.put("clientProgramName", BaseDatabaseType.APPLICATION_NAME);
         props.put("retrieveMessagesFromServerOnGetMessage", "true");
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-
-
-
-
-
-
-        return super.detectPasswordRequiredByUrl(url);
     }
 }

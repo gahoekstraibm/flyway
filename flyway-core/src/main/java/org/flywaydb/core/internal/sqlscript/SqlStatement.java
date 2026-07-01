@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,12 +57,10 @@ public interface SqlStatement {
     boolean isBatchable();
 
 
-
-
-
-
-
-
+    /**
+     * @return The external SQL script referenced by this statement. {@code null} if none.
+     */
+    SqlScript getReferencedSqlScript();
 
     /**
      * Executes this statement against the database.

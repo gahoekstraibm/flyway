@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,21 +41,17 @@ public class ChecksumCalculator {
     public static int calculate(LoadableResource... loadableResources) {
         int checksum;
 
-
-
-
+        if (loadableResources.length == 1) {
             checksum = calculateChecksumForResource(loadableResources[0]);
+        } else {
+            final CRC32 crc32 = new CRC32();
+            for (LoadableResource resource : loadableResources) {
+                //noinspection Since15
+                crc32.update(intToByteArray(calculateChecksumForResource(resource)));
+            }
 
-
-
-
-
-
-
-
-
-
-
+            checksum = (int) crc32.getValue();
+        }
 
         return checksum;
     }
@@ -86,14 +82,12 @@ public class ChecksumCalculator {
         return (int) crc32.getValue();
     }
 
-
-
-
-
-
-
-
-
-
-
+    private static byte[] intToByteArray(int i) {
+        return new byte[] {
+                (byte) ((i >> 24) & 0xFF),
+                (byte) ((i >> 16) & 0xFF),
+                (byte) ((i >> 8) & 0xFF),
+                (byte) (i & 0xFF)
+        };
+    }
 }

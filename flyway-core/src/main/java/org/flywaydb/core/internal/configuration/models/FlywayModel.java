@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,9 @@ public class FlywayModel extends FlywayEnvironmentModel {
     private String environment;
     private String outputType;
     private Boolean outputProgress;
+    private Boolean outputLogsInJson;
     private String provisionMode;
+    private String color;
 
     public static FlywayModel defaults(){
         FlywayModel model = new FlywayModel();
@@ -59,9 +61,9 @@ public class FlywayModel extends FlywayEnvironmentModel {
         model.setSqlMigrationSeparator("__");
         model.setSqlMigrationSuffixes(Arrays.asList(".sql"));
         model.setCleanDisabled(true);
-        model.setCleanOnValidationError(false);
         model.setCommunityDBSupportEnabled(true);
         model.setLocations(new ArrayList<>(Collections.singletonList("db/migration")));
+        model.setCallbackLocations(Collections.emptyList());
         model.setJarDirs(new ArrayList<>());
         model.setTarget("latest");
         model.setTable("flyway_schema_history");
@@ -92,6 +94,7 @@ public class FlywayModel extends FlywayEnvironmentModel {
         model.setPlaceholders(new HashMap<>());
         model.setProvisionMode("provision");
         model.setReportEnabled(false);
+        model.setColor("auto");
         return model;
     }
 
@@ -104,8 +107,10 @@ public class FlywayModel extends FlywayEnvironmentModel {
         FlywayModel result = new FlywayModel();
         result.environment = environment.merge(otherPojo.environment);
         result.outputProgress = outputProgress.merge(otherPojo.outputProgress);
+        result.outputLogsInJson = outputLogsInJson.merge(otherPojo.outputLogsInJson);
         result.outputType = outputType.merge(otherPojo.outputType);
         result.provisionMode = provisionMode.merge(otherPojo.provisionMode);
+        result.color = color.merge(otherPojo.color);
         result.setReportFilename(getReportFilename().merge(otherPojo.getReportFilename()));
         result.setEncoding(getEncoding().merge(otherPojo.getEncoding()));
         result.setDetectEncoding(getDetectEncoding().merge(otherPojo.getDetectEncoding()));
@@ -114,15 +119,16 @@ public class FlywayModel extends FlywayEnvironmentModel {
         result.setPlaceholderSeparator(getPlaceholderSeparator().merge(otherPojo.getPlaceholderSeparator()));
         result.setScriptPlaceholderPrefix(getScriptPlaceholderPrefix().merge(otherPojo.getScriptPlaceholderPrefix()));
         result.setScriptPlaceholderSuffix(getScriptPlaceholderSuffix().merge(otherPojo.getScriptPlaceholderSuffix()));
+        result.setPowershellExecutable(getPowershellExecutable().merge(otherPojo.getPowershellExecutable()));
         result.setSqlMigrationPrefix(getSqlMigrationPrefix().merge(otherPojo.getSqlMigrationPrefix()));
         result.setExecuteInTransaction(getExecuteInTransaction().merge(otherPojo.getExecuteInTransaction()));
         result.setRepeatableSqlMigrationPrefix(getRepeatableSqlMigrationPrefix().merge(otherPojo.getRepeatableSqlMigrationPrefix()));
         result.setSqlMigrationSeparator(getSqlMigrationSeparator().merge(otherPojo.getSqlMigrationSeparator()));
         result.setSqlMigrationSuffixes(getSqlMigrationSuffixes().merge(otherPojo.getSqlMigrationSuffixes()));
         result.setCleanDisabled(getCleanDisabled().merge(otherPojo.getCleanDisabled()));
-        result.setCleanOnValidationError(getCleanOnValidationError().merge(otherPojo.getCleanOnValidationError()));
         result.setCommunityDBSupportEnabled(getCommunityDBSupportEnabled().merge(otherPojo.getCommunityDBSupportEnabled()));
         result.setLocations(getLocations().merge(otherPojo.getLocations()));
+        result.setCallbackLocations(getCallbackLocations().merge(otherPojo.getCallbackLocations()));
         result.setJarDirs(getJarDirs().merge(otherPojo.getJarDirs()));
         result.setTable(getTable().merge(otherPojo.getTable()));
         result.setTablespace(getTablespace().merge(otherPojo.getTablespace()));

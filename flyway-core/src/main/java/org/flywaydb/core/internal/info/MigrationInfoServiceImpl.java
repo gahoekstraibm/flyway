@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,16 @@ import org.flywaydb.core.api.pattern.ValidatePattern;
 import org.flywaydb.core.api.resolver.ResolvedMigration;
 import org.flywaydb.core.api.MigrationFilter;
 import org.flywaydb.core.extensibility.AppliedMigration;
-import org.flywaydb.core.extensibility.LicenseGuard;
 import org.flywaydb.core.extensibility.MigrationType;
-import org.flywaydb.core.extensibility.Tier;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Schema;
-import org.flywaydb.core.internal.license.FlywayEditionUpgradeRequiredException;
 import org.flywaydb.core.internal.resolver.CompositeMigrationResolver;
 import org.flywaydb.core.internal.schemahistory.SchemaHistory;
 import org.flywaydb.core.internal.util.Pair;
 
 import java.util.*;
 
-public class MigrationInfoServiceImpl implements MigrationInfoService, OperationResult {
+public class MigrationInfoServiceImpl implements MigrationInfoService {
     private final CompositeMigrationResolver migrationResolver;
     private final SchemaHistory schemaHistory;
     private final Database database;
@@ -49,7 +46,6 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
     private final MigrationVersion target;
     private final boolean outOfOrder;
     private final ValidatePattern[] ignorePatterns;
-    private final MigrationPattern[] cherryPick;
     /**
      * The migrations infos calculated at the last refresh.
      */
@@ -65,10 +61,9 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
      * @param configuration The current configuration.
      * @param target The target version up to which to retrieve the info.
      * @param outOfOrder Allows migrations to be run "out of order".
-     * @param cherryPick The migrations to consider when migration.
      */
     public MigrationInfoServiceImpl(CompositeMigrationResolver migrationResolver, SchemaHistory schemaHistory, Database database, final Configuration configuration,
-                                    MigrationVersion target, boolean outOfOrder, ValidatePattern[] ignorePatterns, MigrationPattern[] cherryPick) {
+                                    MigrationVersion target, boolean outOfOrder, ValidatePattern[] ignorePatterns) {
         this.migrationResolver = migrationResolver;
         this.configuration = configuration;
         this.database = database;
@@ -76,7 +71,6 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
         this.target = target;
         this.outOfOrder = outOfOrder;
         this.ignorePatterns = ignorePatterns;
-        this.cherryPick = cherryPick;
     }
 
     /**
@@ -86,18 +80,15 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
         Collection<ResolvedMigration> resolvedMigrations = migrationResolver.resolveMigrations(configuration);
         List<AppliedMigration> appliedMigrations = schemaHistory.allAppliedMigrations();
 
-        MigrationInfoContext context = new MigrationInfoContext();
+        MigrationInfoContext context = new MigrationInfoContext(configuration);
         context.target = target;
         context.outOfOrder = outOfOrder;
         context.ignorePatterns = ignorePatterns;
-        context.cherryPick = cherryPick;
 
         Map<Pair<MigrationVersion, MigrationType>, ResolvedMigration> resolvedVersioned = getResolvedVersionedMigrations(resolvedMigrations, context);
         Map<String, ResolvedMigration> resolvedRepeatable = new TreeMap<>(getResolvedRepeatableMigrations(resolvedMigrations));
 
-
-
-
+        context.cherryPickSupport.validatePatterns(context.cherryPick, resolvedMigrations, appliedMigrations, configuration);
 
         List<Pair<AppliedMigration, AppliedMigrationAttributes>> appliedVersioned = new ArrayList<>(getAppliedVersionedMigrations(appliedMigrations, context));
         List<Pair<AppliedMigration, AppliedMigrationAttributes>> appliedRepeatable = new ArrayList<>(getAppliedRepeatableMigrations(appliedMigrations));
@@ -217,37 +208,6 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
         }
         return appliedRepeatableMigrations;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private void validateTarget(MigrationVersion target, List<MigrationInfoImpl> migrationInfos) {
         boolean targetFound = false;
@@ -374,12 +334,12 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
 
     @Override
     public MigrationInfo[] all() {
-        return migrationInfos.toArray(new MigrationInfo[0]);
+        return migrationInfos.toArray(MigrationInfo[]::new);
     }
 
     public MigrationInfo[] all(MigrationFilter filter) {
         if (filter == null) {
-            return migrationInfos.toArray(new MigrationInfo[0]);
+            return migrationInfos.toArray(MigrationInfo[]::new);
         }
 
         return migrationInfos.stream()
@@ -428,7 +388,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 pendingMigrations.add(migrationInfo);
             }
         }
-        return pendingMigrations.toArray(new MigrationInfoImpl[0]);
+        return pendingMigrations.toArray(MigrationInfoImpl[]::new);
     }
 
     @Override
@@ -439,7 +399,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 appliedMigrations.add(migrationInfo);
             }
         }
-        return appliedMigrations.toArray(new MigrationInfoImpl[0]);
+        return appliedMigrations.toArray(MigrationInfoImpl[]::new);
     }
 
     /**
@@ -452,7 +412,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 resolvedMigrations.add(migrationInfo);
             }
         }
-        return resolvedMigrations.toArray(new MigrationInfo[0]);
+        return resolvedMigrations.toArray(MigrationInfo[]::new);
     }
 
     /**
@@ -465,7 +425,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 failedMigrations.add(migrationInfo);
             }
         }
-        return failedMigrations.toArray(new MigrationInfoImpl[0]);
+        return failedMigrations.toArray(MigrationInfoImpl[]::new);
     }
 
     /**
@@ -481,7 +441,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 futureMigrations.add(migrationInfo);
             }
         }
-        return futureMigrations.toArray(new MigrationInfo[0]);
+        return futureMigrations.toArray(MigrationInfo[]::new);
     }
 
     /**
@@ -494,7 +454,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 outOfOrderMigrations.add(migrationInfo);
             }
         }
-        return outOfOrderMigrations.toArray(new MigrationInfo[0]);
+        return outOfOrderMigrations.toArray(MigrationInfo[]::new);
     }
 
     /**
@@ -507,7 +467,7 @@ public class MigrationInfoServiceImpl implements MigrationInfoService, Operation
                 result.add(migrationInfo);
             }
         }
-        return result.toArray(new MigrationInfoImpl[0]);
+        return result.toArray(MigrationInfoImpl[]::new);
     }
 
     /**

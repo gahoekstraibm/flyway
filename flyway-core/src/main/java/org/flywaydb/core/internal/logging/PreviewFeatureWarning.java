@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
  */
 package org.flywaydb.core.internal.logging;
 
+import static org.flywaydb.core.internal.util.FlywayDbWebsiteLinks.FEEDBACK_SURVEY_LINK;
+
 import lombok.CustomLog;
 
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ import java.util.List;
 @CustomLog
 public class PreviewFeatureWarning {
     private static final List<String> LOGGED_FEATURES = new ArrayList<>();
+    
+    public static final String NATIVE_CONNECTORS = "Native Connectors";
     public static boolean isPreviewFeatureEnabled(String featureName, String environmentVariable, boolean showHowToEnable) {
         if (System.getenv(environmentVariable) != null) {
             logPreviewFeature(featureName);
@@ -43,10 +47,11 @@ public class PreviewFeatureWarning {
         if (LOGGED_FEATURES.contains(featureName)) {
             return;
         }
-
+        String link = featureName.startsWith(NATIVE_CONNECTORS) ? FEEDBACK_SURVEY_LINK : "DatabaseDevOps@red-gate.com";
+        
         LOG.info("-----------------------------------------------------------------------------");
         LOG.info("You are using a preview feature '" + featureName + "'.");
-        LOG.info("Please report any issues you encounter to DatabaseDevOps@red-gate.com");
+        LOG.info("Please report any issues you encounter to " + link);
         LOG.info("-----------------------------------------------------------------------------");
 
         LOGGED_FEATURES.add(featureName);

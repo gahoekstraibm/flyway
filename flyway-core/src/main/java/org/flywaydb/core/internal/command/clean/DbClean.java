@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
  */
 package org.flywaydb.core.internal.command.clean;
 
+import static org.flywaydb.core.internal.util.CommandExtensionUtils.runCommandExtension;
+
+import java.util.ArrayList;
 import lombok.CustomLog;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.callback.Event;
@@ -27,7 +30,7 @@ import org.flywaydb.core.api.output.CleanResult;
 import org.flywaydb.core.api.output.CommandResultFactory;
 import org.flywaydb.core.extensibility.CommandExtension;
 import org.flywaydb.core.internal.callback.CallbackExecutor;
-import org.flywaydb.core.internal.command.clean.CleanModeConfigurationExtension.Mode;
+import org.flywaydb.core.internal.command.clean.CleanModel.Mode;
 import org.flywaydb.core.internal.database.base.Connection;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Schema;
@@ -44,10 +47,10 @@ public class DbClean {
     protected final Schema[] schemas;
     protected final Connection connection;
     protected final Database database;
-    protected final CallbackExecutor callbackExecutor;
+    protected final CallbackExecutor<Event> callbackExecutor;
     protected final Configuration configuration;
 
-    public DbClean(Database database, SchemaHistory schemaHistory, Schema defaultSchema, Schema[] schemas, CallbackExecutor callbackExecutor, Configuration configuration) {
+    public DbClean(Database database, SchemaHistory schemaHistory, Schema defaultSchema, Schema[] schemas, CallbackExecutor<Event> callbackExecutor, Configuration configuration) {
         this.schemaHistory = schemaHistory;
         this.defaultSchema = defaultSchema;
         this.schemas = schemas;
@@ -71,11 +74,7 @@ public class DbClean {
             cleanResult = CommandResultFactory.createCleanResult(database.getCatalog());
             new CleanExecutor(connection, database, schemaHistory, callbackExecutor).clean(defaultSchema, schemas, cleanResult);
         } else {
-            cleanResult = configuration.getPluginRegister().getPlugins(CommandExtension.class).stream()
-                                       .filter(e -> e.handlesCommand(command))
-                                       .findFirst()
-                                       .map(e -> (CleanResult) e.handle(command, configuration, Collections.emptyList(), null))
-                                       .orElseThrow(() -> new FlywayException("No command extension found to handle command " + command));
+            cleanResult = (CleanResult) runCommandExtension(configuration, command, new ArrayList<>());
         }
 
         callbackExecutor.onEvent(Event.AFTER_CLEAN);
@@ -91,14 +90,11 @@ public class DbClean {
         }
 
         try {
-            switch (Mode.valueOf(mode.toUpperCase())) {
-                case SCHEMA:
-                    return "clean-schemas";
-                case ALL:
-                    return "clean-all";
-                default:
-                    return "clean";
-            }
+            return switch (Mode.valueOf(mode.toUpperCase())) {
+                case SCHEMA -> "clean-schemas";
+                case ALL -> "clean-all";
+                default -> "clean";
+            };
         } catch (IllegalArgumentException e) {
             return mode;
         }

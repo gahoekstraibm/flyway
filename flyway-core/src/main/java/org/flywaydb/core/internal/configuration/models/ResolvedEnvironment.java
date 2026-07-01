@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,27 +19,33 @@
  */
 package org.flywaydb.core.internal.configuration.models;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.List;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.With;
 import org.flywaydb.core.internal.configuration.resolvers.ProvisionerMode;
 
 @Getter
 @Setter
+@With
+@AllArgsConstructor
 public class ResolvedEnvironment {
     private String url;
     private String user;
     private String password;
     private String driver;
-    private List<String> schemas;
+    private List<String> schemas = List.of();
     private String token;
     private Integer connectRetries;
     private Integer connectRetriesInterval;
     private String initSql;
-    private Map<String, String> jdbcProperties;
+    private Map<String, String> jdbcProperties = Map.of();
     private ProvisionerMode provisionerMode;
+    private String nativeUrl; //TODO - not implemented, placeholder only.
+
+    public ResolvedEnvironment() {}
 
     public EnvironmentModel toEnvironmentModel() {
         EnvironmentModel result = new EnvironmentModel();

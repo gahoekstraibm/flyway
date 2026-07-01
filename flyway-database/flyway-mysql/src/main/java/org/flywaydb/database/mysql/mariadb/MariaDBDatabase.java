@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-mysql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,6 @@ public class MariaDBDatabase extends MySQLDatabase {
     public void ensureSupported(Configuration configuration) {
         ensureDatabaseIsRecentEnough("5.1");
         ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("10.3", Tier.PREMIUM, configuration);
-        recommendFlywayUpgradeIfNecessary("11.2");
+        recommendFlywayUpgradeIfNecessary("11.7");
     }
 }

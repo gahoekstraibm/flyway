@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,112 +19,33 @@
  */
 package org.flywaydb.core;
 
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import lombok.Getter;
-import lombok.experimental.ExtensionMethod;
-import org.flywaydb.core.api.FlywayException;
+import java.time.Instant;
+import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.extensibility.EventTelemetryModel;
-import org.flywaydb.core.extensibility.RootTelemetryModel;
-import org.flywaydb.core.extensibility.TelemetryPlugin;
-import org.flywaydb.core.internal.plugin.PluginRegister;
-import org.flywaydb.core.internal.util.FileUtils;
-import org.flywaydb.core.internal.util.StringUtils;
+import org.flywaydb.core.extensibility.Plugin;
+import org.flywaydb.core.internal.license.FlywayPermit;
 
-import java.util.List;
-import java.util.UUID;
+public interface FlywayTelemetryManager extends Plugin {
 
-@ExtensionMethod(StringUtils.class)
-public class FlywayTelemetryManager implements AutoCloseable{
-    private final PluginRegister pluginRegister;
-    private final Future<List<TelemetryPlugin>> initialized;
-    private Future<? extends RootTelemetryModel> rootTelemetryModelFuture;
-    private final Collection<Future<Void>> eventFutures = new ConcurrentLinkedDeque<>();
+    AutoCloseable start();
 
-    @Getter
-    private RootTelemetryModel rootTelemetryModel = new RootTelemetryModel();
-    
-    public FlywayTelemetryManager(final PluginRegister pluginRegister) {
-        this.pluginRegister = pluginRegister;
-        initialized = CompletableFuture.supplyAsync(this::initialize);
-    }
-    
-    public void setRootTelemetryModel(final Future<? extends RootTelemetryModel> rootTelemetryModel) {
-        rootTelemetryModelFuture = rootTelemetryModel;
-        CompletableFuture.runAsync(() -> {
-            try {
-                this.rootTelemetryModel = rootTelemetryModel.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new FlywayException(e);
-            }
-        });
-    }
+    AutoCloseable start(Instant startTime);
 
-    private List<TelemetryPlugin> initialize() {
-        final List<TelemetryPlugin> telemetryPlugins = this.pluginRegister.getPlugins(TelemetryPlugin.class);
+    void logEvent(final EventTelemetryModel model);
 
-        for(final TelemetryPlugin telemetryPlugin : telemetryPlugins){
-            telemetryPlugin.logRootDetails(rootTelemetryModel);
-        }
+    String startEvent(final EventTelemetryModel model);
 
-        String userId = System.getenv("RG_TELEMETRY_ANONYMOUS_USER_ID");
-        if(!userId.hasText()) {
-            userId = FileUtils.readUserIdFromFileIfNoneWriteDefault();
-        }
+    void notifyRootConfigChanged(final Configuration config);
 
-        rootTelemetryModel.setUserId(userId);
-        String sessionId = System.getenv("RG_TELEMETRY_SESSION_ID");
-        if(!sessionId.hasText()) {
-            sessionId = UUID.randomUUID().toString();
-        }
-        rootTelemetryModel.setSessionId(sessionId);
+    void notifyPermitChanged(final FlywayPermit permit);
 
-        String operationId = System.getenv("RG_TELEMETRY_OPERATION_ID");
-        if(!operationId.hasText()) {
-            operationId = UUID.randomUUID().toString();
-        }
-        rootTelemetryModel.setOperationId(operationId);
-        
-        return telemetryPlugins;
-    }
+    void notifyDatabaseChanged(final String engine, final String version, final String hosting);
 
-    public void logEvent(final EventTelemetryModel model) {
-        eventFutures.add(CompletableFuture.runAsync(() -> {
-            try {
-                final List<TelemetryPlugin> telemetryPlugins = initialized.get();
-                if (rootTelemetryModelFuture != null) {
-                    rootTelemetryModelFuture.get();
-                }
+    void notifyNativeConnectorsModeModeChanged(final boolean nativeConnectorsMode);
 
-                for (final TelemetryPlugin telemetryPlugin : telemetryPlugins) {
-                    telemetryPlugin.logEventDetails(model);
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                throw new FlywayException(e);
-            }
-        }));
-    }
-    @Override
-    public void close() throws FlywayException {
-        CompletableFuture.runAsync(() -> {
-            try {
-                final List<TelemetryPlugin> telemetryPlugins = initialized.get();
-                if (rootTelemetryModelFuture != null) {
-                    rootTelemetryModelFuture.get();
-                }
-                for(final Future<Void> eventFuture : eventFutures){
-                    eventFuture.get();
-                }
+    void notifyUserIdChanged(final String hashedUserId);
 
-                for (final TelemetryPlugin telemetryPlugin : telemetryPlugins) {
-                    telemetryPlugin.close();
-                }
-            } catch (final Exception e) {
-                throw new FlywayException(e);
-            }
-        });
-    }
+    void notifyOrganizationIdChanged(final String hashedOrgUuid);
+
+    FlywayTelemetryProperties getProperties();
 }

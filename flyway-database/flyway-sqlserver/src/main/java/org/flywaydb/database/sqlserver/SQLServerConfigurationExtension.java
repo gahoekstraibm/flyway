@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-sqlserver
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,18 +50,13 @@ public class SQLServerConfigurationExtension implements ConfigurationExtension {
 
     @Override
     public String getConfigurationParameterFromEnvironmentVariable(String environmentVariable) {
-        switch (environmentVariable) {
-            case "FLYWAY_PLUGINS_SQL_SERVER_KERBEROS_LOGIN_FILE":
-            case "FLYWAY_SQL_SERVER_KERBEROS_LOGIN_FILE":
-                return KERBEROS_LOGIN_FILE;
-            case "FLYWAY_PLUGINS_CLEAN_MODE":
-            case "FLYWAY_SQL_SERVER_CLEAN_MODE":
-                return CLEAN_MODE;
-            case "FLYWAY_PLUGINS_CLEAN_SCHEMAS_EXCLUDE":
-            case "FLYWAY_SQL_SERVER_CLEAN_SCHEMAS_EXCLUDE":
-                return CLEAN_SCHEMAS_EXCLUDE;
-            default:
-                return null;
-        }
+        return switch (environmentVariable) {
+            case "FLYWAY_SQL_SERVER_KERBEROS_LOGIN_FILE" ->
+                KERBEROS_LOGIN_FILE;
+            case "FLYWAY_SQL_SERVER_CLEAN_MODE" -> CLEAN_MODE;
+            case "FLYWAY_SQL_SERVER_CLEAN_SCHEMAS_EXCLUDE" ->
+                CLEAN_SCHEMAS_EXCLUDE;
+            default -> null;
+        };
     }
 }

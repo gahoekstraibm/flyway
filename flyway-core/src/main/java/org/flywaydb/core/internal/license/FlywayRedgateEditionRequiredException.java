@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ package org.flywaydb.core.internal.license;
 import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 
 /**
- * Thrown when an attempt was made to use a Flyway Teams Edition feature not supported by
- * Flyway Community Edition.
+ * Thrown when an attempt was made to use a Flyway Redgate Edition feature not supported by
+ * Flyway OSS Edition.
  */
 public class FlywayRedgateEditionRequiredException extends FlywayLicensingException {
     public FlywayRedgateEditionRequiredException(String feature) {

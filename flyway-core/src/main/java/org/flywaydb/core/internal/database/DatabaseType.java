@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 package org.flywaydb.core.internal.database;
 
 import org.flywaydb.core.api.ResourceProvider;
+import org.flywaydb.core.api.callback.Event;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.extensibility.Plugin;
 import org.flywaydb.core.internal.callback.CallbackExecutor;
@@ -40,14 +41,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-public interface DatabaseType extends Plugin {
-    /**
-     * @return The human-readable name for this database type.
-     */
-    String getName();
-
-    List<String> getSupportedEngines();
-
+public interface DatabaseType extends GeneralDatabaseType {
     /**
      * @return The JDBC type used to represent {@code null} in prepared statements.
      */
@@ -159,7 +153,7 @@ public interface DatabaseType extends Plugin {
      */
     SqlScriptExecutorFactory createSqlScriptExecutorFactory(
             final JdbcConnectionFactory jdbcConnectionFactory,
-            final CallbackExecutor callbackExecutor,
+            final CallbackExecutor<Event> callbackExecutor,
             final StatementInterceptor statementInterceptor
                                                            );
 
@@ -205,6 +199,13 @@ public interface DatabaseType extends Plugin {
     void setOverridingConnectionProps(Map<String, String> props);
 
     /**
+     * Sets connection properties that must be applied before the JDBC driver is initialized.
+     * These properties typically control driver-level behavior, such as debugging or tracing,
+     * and need to be set early to take effect.
+     */
+    default void setEarlyConnectionProps() {}
+
+    /**
      * Shutdown the database that was opened (only applicable to embedded databases that require this).
      *
      * @param url The JDBC url used to create the database.
@@ -219,6 +220,7 @@ public interface DatabaseType extends Plugin {
      * @param url The url to check
      * @return true if a username needs to be provided
      */
+    @Deprecated
     boolean detectUserRequiredByUrl(String url);
 
     /**
@@ -228,6 +230,7 @@ public interface DatabaseType extends Plugin {
      * @param url The url to check
      * @return true if a password needs to be provided
      */
+    @Deprecated
     boolean detectPasswordRequiredByUrl(String url);
 
     /**

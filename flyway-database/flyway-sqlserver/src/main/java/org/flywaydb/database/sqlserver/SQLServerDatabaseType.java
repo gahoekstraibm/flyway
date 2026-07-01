@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-sqlserver
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 package org.flywaydb.database.sqlserver;
+
+import static org.flywaydb.core.internal.util.UrlUtils.isSecretManagerUrl;
 
 import lombok.CustomLog;
 import org.flywaydb.core.api.ResourceProvider;
@@ -56,25 +58,12 @@ public class SQLServerDatabaseType extends BaseDatabaseType {
 
     @Override
     public boolean handlesJDBCUrl(String url) {
-        if (url.startsWith("jdbc-secretsmanager:sqlserver:")) {
-
-
-
-
-            throw new FlywayEditionUpgradeRequiredException(Tier.ENTERPRISE, (Tier) null, "jdbc-secretsmanager");
-
-        }
-        return url.startsWith("jdbc:sqlserver:") || (supportsJTDS() && url.startsWith("jdbc:jtds:")) ||
+        return isSecretManagerUrl(url, "sqlserver") || url.startsWith("jdbc:sqlserver:") || (supportsJTDS() && url.startsWith("jdbc:jtds:")) ||
                 url.startsWith("jdbc:p6spy:sqlserver:") || (supportsJTDS() && url.startsWith("jdbc:p6spy:jtds:"));
     }
 
     @Override
     public String getDriverClass(String url, ClassLoader classLoader) {
-
-
-
-
-
         if (url.startsWith("jdbc:p6spy:sqlserver:") || (supportsJTDS() && url.startsWith("jdbc:p6spy:jtds:"))) {
             return "com.p6spy.engine.spy.P6SpyDriver";
         }
@@ -113,7 +102,7 @@ public class SQLServerDatabaseType extends BaseDatabaseType {
     @Override
     public void setConfigConnectionProps(Configuration config, Properties props, ClassLoader classLoader) {
         if (config != null) {
-            SQLServerConfigurationExtension configurationExtension = config.getPluginRegister().getPlugin(SQLServerConfigurationExtension.class);
+            SQLServerConfigurationExtension configurationExtension = config.getPluginRegister().getExact(SQLServerConfigurationExtension.class);
 
 
 
@@ -127,32 +116,12 @@ public class SQLServerDatabaseType extends BaseDatabaseType {
 
 
             if (StringUtils.hasText(configurationExtension.getKerberos().getLogin().getFile())) {
-                throw new FlywayEditionUpgradeRequiredException(Tier.TEAMS, LicenseGuard.getTier(config), "sqlserver.kerberos.login.file");
+                throw new FlywayEditionUpgradeRequiredException(LicenseGuard.getTier(config), "sqlserver.kerberos.login.file");
             }
             if (StringUtils.hasText(config.getKerberosConfigFile())) {
-                throw new FlywayEditionUpgradeRequiredException(Tier.TEAMS, LicenseGuard.getTier(config), "sqlserver.kerberos.config.file");
+                throw new FlywayEditionUpgradeRequiredException(LicenseGuard.getTier(config), "sqlserver.kerberos.config.file");
             }
 
         }
-    }
-
-    @Override
-    public boolean detectUserRequiredByUrl(String url) {
-        return !(url.contains("integratedSecurity=")
-                || url.contains("authentication=ActiveDirectoryIntegrated")
-                || url.contains("authentication=ActiveDirectoryMSI"));
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-
-
-
-
-
-
-        return !(url.contains("integratedSecurity=")
-                || url.contains("authentication=ActiveDirectoryIntegrated")
-                || url.contains("authentication=ActiveDirectoryMSI"));
     }
 }

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@
  * =========================LICENSE_END==================================
  */
 package org.flywaydb.core.api.logging;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Factory for implementation-specific loggers.

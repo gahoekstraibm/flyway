@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@
  */
 package org.flywaydb.core.api;
 
+import org.flywaydb.core.api.output.OperationResult;
+
 /**
  * Info about all migrations, including applied, current and pending with details and status.
  */
-public interface MigrationInfoService extends InfoOutputProvider {
+public interface MigrationInfoService extends InfoOutputProvider, OperationResult {
     /**
      * Retrieves the full set of infos about applied, current and future migrations.
      *

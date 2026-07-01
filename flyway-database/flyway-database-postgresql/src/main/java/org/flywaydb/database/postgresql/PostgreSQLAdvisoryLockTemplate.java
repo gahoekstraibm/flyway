@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-postgresql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class PostgreSQLAdvisoryLockTemplate {
     }
 
     public <T> T execute(Callable<T> callable) {
-        PostgreSQLConfigurationExtension configurationExtension = configuration.getPluginRegister().getPlugin(PostgreSQLConfigurationExtension.class);
+        PostgreSQLConfigurationExtension configurationExtension = configuration.getPluginRegister().getExact(PostgreSQLConfigurationExtension.class);
 
         if (configurationExtension.isTransactionalLock()) {
             return new TransactionalExecutionTemplate(jdbcTemplate.getConnection(), true).execute(() -> execute(callable, this::tryLockTransactional));

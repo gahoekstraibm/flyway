@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ public class DatabaseConstants {
 
     public static final String DATABASE_HOSTING_AZURE_SQL_DATABASE = "azure-sql-database";
     public static final String DATABASE_HOSTING_AZURE_SQL_MANAGED_INSTANCE = "azure-sql-managed-instance";
+    public static final String DATABASE_HOSTING_FABRIC = "microsoft-fabric-database";
+    public static final String DATABASE_HOSTING_FABRIC_DATA_WAREHOUSE = "microsoft-fabric-data-warehouse";
     public static final String DATABASE_HOSTING_AWS_RDS = "aws-rds";
     public static final String DATABASE_HOSTING_AZURE_VM = "azure-vm";
     public static final String DATABASE_HOSTING_AWS_VM = "aws-vm";

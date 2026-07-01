@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-reports
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,16 @@ package org.flywaydb.reports.output;
 
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.reports.api.extensibility.HtmlRenderer;
+import org.flywaydb.reports.html.HoldingResult;
 
 public class HoldingRenderer implements HtmlRenderer<HoldingResult> {
     @Override
-    public String render(HoldingResult result, Configuration config) {
+    public String render(final HoldingResult result, final Configuration config) {
         return result.getBodyText();
     }
 
     @Override
-    public String tabTitle(HoldingResult result, Configuration config) {
+    public String tabTitle(final HoldingResult result, final Configuration config) {
         return result.getTabTitle();
     }
 

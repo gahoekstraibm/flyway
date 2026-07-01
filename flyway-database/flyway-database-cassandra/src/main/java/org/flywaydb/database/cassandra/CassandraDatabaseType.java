@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-cassandra
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ package org.flywaydb.database.cassandra;
 
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
+import static org.flywaydb.core.internal.util.DeprecationUtils.DeprecatedFeatures.CASSANDRA_JDBC;
+import static org.flywaydb.core.internal.util.DeprecationUtils.printDeprecationNotice;
+
 import org.flywaydb.core.internal.database.base.BaseDatabaseType;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.jdbc.JdbcConnectionFactory;
@@ -32,6 +35,7 @@ import java.sql.Connection;
 import java.sql.Types;
 
 public class CassandraDatabaseType extends BaseDatabaseType {
+    private static boolean deprecationLogged;
 
     @Override
     public String getName() {
@@ -59,7 +63,14 @@ public class CassandraDatabaseType extends BaseDatabaseType {
 
     @Override
     public boolean handlesDatabaseProductNameAndVersion(String databaseProductName, String databaseProductVersion, Connection connection) {
-        return databaseProductName.startsWith("Cassandra");
+        if (databaseProductName.startsWith("Cassandra")) {
+            if (!deprecationLogged) {
+                printDeprecationNotice(CASSANDRA_JDBC);
+                deprecationLogged = true;
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override

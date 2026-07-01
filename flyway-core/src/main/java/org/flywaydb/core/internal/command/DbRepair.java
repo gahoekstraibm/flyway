@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class DbRepair {
     /**
      * The callback executor.
      */
-    private final CallbackExecutor callbackExecutor;
+    private final CallbackExecutor<Event> callbackExecutor;
 
     /**
      * The database-specific support.
@@ -103,7 +103,7 @@ public class DbRepair {
         this.configuration = configuration;
 
         this.migrationInfoService = new MigrationInfoServiceImpl(migrationResolver, schemaHistory, database, configuration,
-                                                                 MigrationVersion.LATEST, true, ValidatePatternUtils.getIgnoreAllPattern(), configuration.getCherryPick());
+                                                                 MigrationVersion.LATEST, true, ValidatePatternUtils.getIgnoreAllPattern());
 
         this.repairResult = CommandResultFactory.createRepairResult(database.getCatalog());
     }

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 package org.flywaydb.core.api.logging;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Synchronized;
@@ -71,6 +72,21 @@ public class LogFactory {
     @Setter(onMethod = @__(@Synchronized))
     private static LogCreator fallbackLogCreator;
     private static Configuration configuration;
+    @Getter
+    @Setter
+    private static LogLevel logLevel;
+
+    @Getter
+    @Setter
+    private static boolean jsonLogsEnabled;
+
+    public static boolean isDebugEnabled() {
+        return logLevel == LogLevel.DEBUG;
+    }
+
+    public static boolean isQuietMode() {
+        return logLevel == LogLevel.WARN;
+    }
 
     @Synchronized
     public static void setConfiguration(Configuration configuration) {
@@ -98,23 +114,14 @@ public class LogFactory {
         if (configuration == null) {
             return new BufferedLogCreator();
         }
-        
-        return new MultiLogCreator(Arrays.stream(configuration.getLoggers()).map(logger -> {
-            switch (logger) {
-                case "auto":
-                    return autoDetectLogCreator(classLoader, fallbackLogCreator);
-                case "maven":
-                case "console":
-                    return fallbackLogCreator;
-                case "slf4j":
-                    return ClassUtils.instantiate(Slf4jLogCreator.class.getName(), classLoader);
-                case "log4j2":
-                    return ClassUtils.instantiate(Log4j2LogCreator.class.getName(), classLoader);
-                case "apache-commons":
-                    return ClassUtils.instantiate(ApacheCommonsLogCreator.class.getName(), classLoader);
-                default:
-                    return ClassUtils.instantiate(logger, classLoader);
-            }
+
+        return new MultiLogCreator(Arrays.stream(configuration.getLoggers()).map(logger -> switch (logger) {
+            case "auto" -> autoDetectLogCreator(classLoader, fallbackLogCreator);
+            case "maven", "console" -> fallbackLogCreator;
+            case "slf4j" -> ClassUtils.instantiate(Slf4jLogCreator.class.getName(), classLoader);
+            case "log4j2" -> ClassUtils.instantiate(Log4j2LogCreator.class.getName(), classLoader);
+            case "apache-commons" -> ClassUtils.instantiate(ApacheCommonsLogCreator.class.getName(), classLoader);
+            default -> ClassUtils.instantiate(logger, classLoader);
         }).collect(Collectors.toList()));
     }
 

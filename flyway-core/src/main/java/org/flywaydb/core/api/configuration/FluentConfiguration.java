@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,7 +238,7 @@ public class FluentConfiguration implements Configuration {
     /**
      * Ignore migrations that match this comma-separated list of patterns when validating migrations.
      * Each pattern is of the form <migration_type>:<migration_state>
-     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
+     * See https://documentation.red-gate.com/flyway/reference/configuration/flyway-namespace/flyway-ignore-migration-patterns-setting for full details
      * Example: repeatable:missing,versioned:pending,*:failed
      */
     public FluentConfiguration ignoreMigrationPatterns(String... ignoreMigrationPatterns) {
@@ -248,7 +248,7 @@ public class FluentConfiguration implements Configuration {
 
     /**
      * Ignore migrations that match this array of ValidatePatterns when validating migrations.
-     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
+     * See https://documentation.red-gate.com/flyway/reference/configuration/flyway-namespace/flyway-ignore-migration-patterns-setting for full details
      */
     public FluentConfiguration ignoreMigrationPatterns(ValidatePattern... ignoreMigrationPatterns) {
         config.setIgnoreMigrationPatterns(ignoreMigrationPatterns);
@@ -273,21 +273,6 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration validateOnMigrate(boolean validateOnMigrate) {
         config.setValidateOnMigrate(validateOnMigrate);
-        return this;
-    }
-
-    /**
-     * Whether to automatically call clean or not when a validation error occurs.
-     * This is exclusively intended as a convenience for development. even though we strongly recommend not to change
-     * migration scripts once they have been checked into SCM and run, this provides a way of dealing with this case in
-     * a smooth manner. The database will be wiped clean automatically, ensuring that the next migration will bring you
-     * back to the state checked into SCM.
-     * <b>Warning! Do not enable in production!</b>
-     *
-     * @param cleanOnValidationError {@code true} if clean should be called. {@code false} if not. (default: {@code false})
-     */
-    public FluentConfiguration cleanOnValidationError(boolean cleanOnValidationError) {
-        config.setCleanOnValidationError(cleanOnValidationError);
         return this;
     }
 
@@ -329,6 +314,19 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
+     * Sets the locations to scan recursively for callbacks. The location type is determined by its prefix. Unprefixed
+     * locations or locations starting with {@code classpath:} point to a package on the classpath and may contain both
+     * SQL and Java-based callbacks. Locations starting with {@code filesystem:} point to a directory on the filesystem,
+     * may only contain SQL callbacks and are only scanned recursively down non-hidden directories.
+     *
+     * @param callbackLocations Locations to scan recursively for callbacks.
+     */
+    public FluentConfiguration callbackLocations(final String... callbackLocations) {
+        config.setCallbackLocationsAsStrings(callbackLocations);
+        return this;
+    }
+
+    /**
      * Sets the locations to scan recursively for migrations.
      * The location type is determined by its prefix.
      * Unprefixed locations or locations starting with {@code classpath:} point to a package on the classpath and may
@@ -340,6 +338,19 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration locations(Location... locations) {
         config.setLocations(locations);
+        return this;
+    }
+
+    /**
+     * Sets the locations to scan recursively for callbacks. The location type is determined by its prefix. Unprefixed
+     * locations or locations starting with {@code classpath:} point to a package on the classpath and may contain both
+     * SQL and Java-based callbacks. Locations starting with {@code filesystem:} point to a directory on the filesystem,
+     * may only contain SQL callbacks and are only scanned recursively down non-hidden directories.
+     *
+     * @param callbackLocations Locations to scan recursively for callbacks.
+     */
+    public FluentConfiguration callbackLocations(Location... callbackLocations) {
+        config.setCallbackLocations(callbackLocations);
         return this;
     }
 
@@ -548,6 +559,16 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration scriptPlaceholderSuffix(String scriptPlaceholderSuffix) {
         config.setScriptPlaceholderSuffix(scriptPlaceholderSuffix);
+        return this;
+    }
+
+    /**
+     * Sets the PowerShell executable used for running PowerShell scripts.
+     *
+     * @param powershellExecutable The PowerShell executable (default: "powershell" on Windows, "pwsh" on other platforms)
+     */
+    public FluentConfiguration powershellExecutable(String powershellExecutable) {
+        config.setPowershellExecutable(powershellExecutable);
         return this;
     }
 

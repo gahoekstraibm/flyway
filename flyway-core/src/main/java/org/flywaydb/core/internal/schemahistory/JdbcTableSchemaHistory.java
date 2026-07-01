@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.flywaydb.core.internal.database.base.Connection;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Table;
 import org.flywaydb.core.internal.exception.FlywaySqlException;
+import org.flywaydb.core.internal.exception.FlywayUnknownMigrationTypeException;
 import org.flywaydb.core.internal.jdbc.ExecutionTemplateFactory;
 import org.flywaydb.core.internal.jdbc.JdbcNullTypes;
 import org.flywaydb.core.internal.jdbc.JdbcTemplate;
@@ -43,10 +44,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Callable;
 import org.flywaydb.core.internal.util.Pair;
+import org.flywaydb.core.internal.util.StringUtils;
 
 /**
  * Supports reading and writing to the schema history table.
@@ -143,6 +144,21 @@ class JdbcTableSchemaHistory extends SchemaHistory {
     }
 
     @Override
+    public void drop() {
+        if (!exists()) {
+            LOG.info("Dropping Schema History table " + table + " not necessary as table does not exist");
+            return;
+        }
+
+        LOG.info("Dropping Schema History table " + table);
+        connection.lock(table, () -> {
+            table.drop();
+            return null;
+        });
+        clearCache();
+    }
+
+    @Override
     public <T> T lock(Callable<T> callable) {
         connection.restoreOriginalState();
 
@@ -228,13 +244,20 @@ class JdbcTableSchemaHistory extends SchemaHistory {
                 boolean success = rs.getBoolean(columnOrdinalMap.get("success"));
                 Timestamp installedOn = rs.getTimestamp(columnOrdinalMap.get("installed_on"));
                 if (installedOn == null) {
-                    installedOn = Timestamp.valueOf(rs.getString(columnOrdinalMap.get("installed_on")));
+                    String installedOnStr = rs.getString(columnOrdinalMap.get("installed_on"));
+                    if (StringUtils.hasText(installedOnStr)) {
+                        try {
+                            installedOn = Timestamp.valueOf(installedOnStr);
+                        } catch (IllegalArgumentException e) {
+                            // do nothing
+                        }
+                    }
                 }
 
-                return configuration.getPluginRegister().getPlugins(AppliedMigration.class).stream()
+                return configuration.getPluginRegister().getInstancesOf(AppliedMigration.class).stream()
                                     .filter(am -> am.handlesType(type))
                                     .findFirst()
-                                    .orElse(new BaseAppliedMigration())
+                                    .orElseThrow(() -> new FlywayUnknownMigrationTypeException(type))
                                     .create(installedRank, version, description, type, script, checksum, installedOn, installedBy, executionTime, success);
             }, maxCachedInstalledRank));
         } catch (SQLException e) {

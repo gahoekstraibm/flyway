@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,11 @@ import lombok.Setter;
 import org.flywaydb.core.api.CoreErrorCode;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.extensibility.AwsSecretsManagerSupport;
 import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.database.DatabaseTypeRegister;
 import org.flywaydb.core.internal.util.ClassUtils;
+import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 import org.flywaydb.core.internal.util.StringUtils;
 
 import javax.sql.DataSource;
@@ -113,10 +115,28 @@ public class DriverDataSource implements DataSource {
                             Map<String, String> additionalProperties) throws FlywayException {
         this.url = detectFallbackUrl(url);
 
-        List<DatabaseType> typesAcceptingUrl = DatabaseTypeRegister.getDatabaseTypesForUrl(url, configuration);
+        List<DatabaseType> typesAcceptingUrl = DatabaseTypeRegister.getDatabaseTypesForUrl(url, configuration)
+            .stream()
+            .filter(DatabaseType.class::isInstance)
+            .map(DatabaseType.class::cast)
+            .toList();
+
+        if (typesAcceptingUrl.isEmpty()) {
+            throw new FlywayException("No Flyway database plugin found to handle " + DatabaseTypeRegister.redactJdbcUrl(url)
+                + ". See " + FlywayDbWebsiteLinks.DATABASE_TROUBLESHOOTING + " for troubleshooting");
+        }
+
+        String secretManagerDriverClass = null;
+        if (configuration != null) {
+            secretManagerDriverClass = configuration.getPluginRegister()
+                .getInstanceOf(AwsSecretsManagerSupport.class)
+                .getSecretManagerDriverClass(url, configuration);
+        }
 
         for (DatabaseType type: typesAcceptingUrl) {
-            String mainDriverClass = StringUtils.hasLength(driverClass) ? driverClass : type.getDriverClass(url, classLoader);
+            String mainDriverClass = StringUtils.hasLength(driverClass) ? driverClass :
+                (secretManagerDriverClass != null ? secretManagerDriverClass : type.getDriverClass(url, classLoader));
+            type.setEarlyConnectionProps();
 
             try {
                 this.driver = ClassUtils.instantiate(mainDriverClass, classLoader);
@@ -155,7 +175,8 @@ public class DriverDataSource implements DataSource {
         }
 
         if (this.type == null) {
-            throw new FlywayException("No database found to handle " + DatabaseTypeRegister.redactJdbcUrl(url));
+            throw new FlywayException("No JDBC driver found to handle " + DatabaseTypeRegister.redactJdbcUrl(url)
+                + ". See " + FlywayDbWebsiteLinks.DATABASE_TROUBLESHOOTING + " for troubleshooting");
         }
 
         if (additionalProperties != null) {

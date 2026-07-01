@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,15 +68,5 @@ public class H2DatabaseType extends BaseDatabaseType {
     @Override
     public Parser createParser(Configuration configuration, ResourceProvider resourceProvider, ParsingContext parsingContext) {
         return new H2Parser(configuration, parsingContext);
-    }
-
-    @Override
-    public boolean detectUserRequiredByUrl(String url) {
-        return !(url.toLowerCase().contains(":mem:"));
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-        return !(url.toLowerCase().contains(":mem:"));
     }
 }

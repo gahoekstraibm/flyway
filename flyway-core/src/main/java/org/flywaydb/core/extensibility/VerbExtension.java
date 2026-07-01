@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,42 @@
  */
 package org.flywaydb.core.extensibility;
 
-import org.flywaydb.core.FlywayTelemetryManager;
+import java.util.Collections;
+import java.util.List;
+import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.output.OperationResult;
+import org.flywaydb.core.internal.util.Pair;
+import org.flywaydb.core.internal.util.StringUtils;
 
-public interface VerbExtension extends Plugin {
+public interface VerbExtension extends CommandExtension<OperationResult> {
+    String getCommand();
 
-    boolean handlesVerb(String verb);
+    @Override
+    default boolean handlesCommand(String command) {
+        return getCommand().equals(command);
+    }
 
-    Object executeVerb(Configuration configuration, FlywayTelemetryManager flywayTelemetryManager);
+    default boolean handlesParameter(String parameter) {
+        return false;
+    }
+
+    default OperationResult handle(Configuration config, List<String> flags) throws FlywayException {
+        if (flags != null && !flags.isEmpty()) {
+            throw new FlywayException("VerbExtension does not accept flags: " + flags);
+        }
+
+        return executeVerb(config);
+    }
+
+    OperationResult executeVerb(Configuration configuration);
+
+    @Override
+    default List<Pair<String, String>> getUsage() {
+        if (StringUtils.hasText(getDescription())) {
+            return Collections.singletonList(Pair.of(getCommand(), getDescription()));
+        }
+
+        return CommandExtension.super.getUsage();
+    }
 }

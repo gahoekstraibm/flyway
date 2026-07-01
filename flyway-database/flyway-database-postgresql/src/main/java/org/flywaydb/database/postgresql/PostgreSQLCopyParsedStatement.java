@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-postgresql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,7 @@ public class PostgreSQLCopyParsedStatement extends ParsedSqlStatement {
     /**
      * Delimiter of COPY statements.
      */
-    private static final Delimiter COPY_DELIMITER = new Delimiter("\\.", true
-
-
-
-    );
+    private static final Delimiter COPY_DELIMITER = new Delimiter("\\.", true, null);
 
     private final String copyData;
 

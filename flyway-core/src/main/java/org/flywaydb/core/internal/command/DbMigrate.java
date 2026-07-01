@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class DbMigrate {
     private final Schema schema;
     private final CompositeMigrationResolver migrationResolver;
     private final Configuration configuration;
-    private final CallbackExecutor callbackExecutor;
+    private final CallbackExecutor<Event> callbackExecutor;
     /**
      * The connection to use to perform the actual database migrations.
      */
@@ -179,7 +179,7 @@ public class DbMigrate {
     private Integer migrateGroup(boolean firstRun) {
         MigrationInfoServiceImpl infoService =
                 new MigrationInfoServiceImpl(migrationResolver, schemaHistory, database, configuration,
-                                             configuration.getTarget(), configuration.isOutOfOrder(), ValidatePatternUtils.getIgnoreAllPattern(), configuration.getCherryPick());
+                                             configuration.getTarget(), configuration.isOutOfOrder(), ValidatePatternUtils.getIgnoreAllPattern());
         infoService.refresh();
 
         MigrationInfo current = infoService.current();
@@ -191,9 +191,7 @@ public class DbMigrate {
             migrateResult.initialSchemaVersion = schemaVersionToOutput.getVersion();
 
             if (configuration.isOutOfOrder()) {
-                String outOfOrderWarning = "outOfOrder mode is active. Migration of schema " + schema + " may not be reproducible.";
-                LOG.warn(outOfOrderWarning);
-                migrateResult.addWarning(outOfOrderWarning);
+                LOG.info("outOfOrder mode is active. Migration of schema " + schema + " may not be reproducible.");
             }
         }
 

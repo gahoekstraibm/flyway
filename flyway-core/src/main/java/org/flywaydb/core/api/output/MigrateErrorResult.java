@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@
  */
 package org.flywaydb.core.api.output;
 
-public class MigrateErrorResult extends MigrateResult {
-    public ErrorOutput.ErrorOutputItem error;
+import org.flywaydb.core.api.output.errors.ErrorOutputItem;
 
-    public MigrateErrorResult(MigrateResult migrateResult, Exception e) {
+public class MigrateErrorResult extends MigrateResult {
+    public ErrorOutputItem error;
+
+    public MigrateErrorResult(final MigrateResult migrateResult, final Exception e) {
         super(migrateResult);
         this.success = false;
-        this.error = ErrorOutput.fromException(e).error;
+        this.error = ErrorOutput.fromException(e).error();
     }
 }

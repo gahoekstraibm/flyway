@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,17 @@ package org.flywaydb.core.internal.util;
 import static org.flywaydb.core.internal.util.FileUtils.createDirIfNotExists;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.ObjectReadContext;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -59,32 +58,32 @@ public class JsonUtils {
     public static String toJson(final Object object) {
         try {
             return getJsonMapper().writeValueAsString(object);
-        } catch (final JsonProcessingException e) {
+        } catch (final JacksonException e) {
             throw new FlywayException("Unable to serialize object to JSON", e);
         }
     }
 
     public static JsonMapper getJsonMapper() {
-        final JsonMapper mapper = new JsonMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        mapper.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true);
-        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        mapper.setSerializationInclusion(Include.ALWAYS);
+        return JsonMapper.builder()
+            .configure(SerializationFeature.INDENT_OUTPUT, true)
+            .configure(DateTimeFeature.WRITE_DATES_WITH_ZONE_ID, true)
+            .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(Include.ALWAYS))
+            .changeDefaultPropertyInclusion(incl -> incl.withContentInclusion(Include.ALWAYS))
 
-        // NOTE: This is a workaround while we use both GSON and ObjectMapper
-        // Once we fully migrate to ObjectMapper, we can remove this line
-        // and use @JsonIgnore rather than transient
-        mapper.configure(MapperFeature.PROPAGATE_TRANSIENT_MARKER, true);
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-        return mapper;
+            // NOTE: This is a workaround while we use both GSON and ObjectMapper
+            // Once we fully migrate to ObjectMapper, we can remove this line
+            // and use @JsonIgnore rather than transient
+            .configure(MapperFeature.PROPAGATE_TRANSIENT_MARKER, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .build();
     }
 
     public static <T> List<T> toList(final String json) {
         try {
             return getJsonMapper().readValue(json, new TypeReference<>() {});
-        } catch (final JsonProcessingException e) {
+        } catch (final JacksonException e) {
             throw new FlywayException("Unable to parse JSON: " + json, e);
         }
     }
@@ -94,31 +93,22 @@ public class JsonUtils {
             return null;
         }
 
-        final var factory = new JsonFactory();
-        try (final var parser = factory.createParser(json)) {
+
+        final var factory = JsonFactory.builder().build();
+        try (final var parser = factory.createParser(ObjectReadContext.empty(), json)) {
             parser.nextToken();
             while (parser.nextToken() != JsonToken.END_OBJECT && parser.currentToken() != null) {
                 if (parser.currentToken().isStructStart()) {
                     // Only look at lop level fields
                     parser.skipChildren();
-                } else if (parser.currentToken() == JsonToken.FIELD_NAME && key.equals(parser.currentName())) {
+                } else if (parser.currentToken() == JsonToken.PROPERTY_NAME && key.equals(parser.currentName())) {
                     parser.nextToken();
-                    return parser.getText();
+                    return parser.getString();
                 }
             }
-        } catch (final IOException e) {
-            throw new FlywayException("Unable to parse JSON: " + json, e);
         }
 
         return null;
-    }
-
-    public static ArrayNode parseJsonArray(final String json) {
-        try {
-            return (ArrayNode) getJsonMapper().readTree(json);
-        } catch (final Exception e) {
-            throw new FlywayException("Unable to parse JSON: " + json, e);
-        }
     }
 
     public static <T> T parseJson(final String json, final Class<T> clazz) {

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-firebird
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,17 +72,12 @@ public class FirebirdParser extends Parser {
     }
 
     private String computeAlternativeCloseQuote(char specialChar) {
-        switch (specialChar) {
-            case '[':
-                return "]'";
-            case '(':
-                return ")'";
-            case '{':
-                return "}'";
-            case '<':
-                return ">'";
-            default:
-                return specialChar + "'";
-        }
+        return switch (specialChar) {
+            case '[' -> "]'";
+            case '(' -> ")'";
+            case '{' -> "}'";
+            case '<' -> ">'";
+            default -> specialChar + "'";
+        };
     }
 }

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@
 package org.flywaydb.core.extensibility;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
+import tools.jackson.databind.ObjectMapper;
 import org.flywaydb.core.api.FlywayException;
 
 import java.util.Map;
@@ -33,7 +32,9 @@ public interface ConfigurationExtension extends Plugin {
     default void extractParametersFromConfiguration(Map<String, String> configuration) {
         // Do nothing
     }
-    String getConfigurationParameterFromEnvironmentVariable(String environmentVariable);
+    default String getConfigurationParameterFromEnvironmentVariable(String environmentVariable) {
+        return null;
+    }
 
     @Override
     default Plugin copy() {

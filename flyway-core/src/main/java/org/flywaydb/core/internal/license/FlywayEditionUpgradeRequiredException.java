@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,23 +20,20 @@
 package org.flywaydb.core.internal.license;
 
 import org.flywaydb.core.extensibility.Tier;
-import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 
 public class FlywayEditionUpgradeRequiredException extends FlywayLicensingException {
-    public FlywayEditionUpgradeRequiredException(Tier edition, DatabaseType databaseType, String version) {
-        super(edition + " or " + databaseType.getName() + " upgrade required: " + databaseType.getName() + " " + version
-                      + " is no longer supported by your current edition of Flyway,"
-                      + " but still supported by " + (edition == null ? "OSS" : edition.getDisplayName()) + ".");
-    }
-
-    public FlywayEditionUpgradeRequiredException(Tier required, Tier current, String feature) {
-        super(required.getDisplayName() + " upgrade required: " + feature + " is not supported by " + (current == null ? "OSS" : current.getDisplayName()) + "." + (
-            current != null
-            ? " If you would like to start a free " + required.getDisplayName() + " trial, please run auth " +
-                ("Enterprise".equalsIgnoreCase(required.name()) ? "-startEnterpriseTrial" : "-startTeamsTrial") + " -IAgreeToTheEula."
-            : " Download Redgate Edition for free: " + FlywayDbWebsiteLinks.REDGATE_EDITION_DOWNLOAD + "." +
-              " Once you have installed Redgate Edition, you can start a free " + required.getDisplayName() + " trial by running auth " +
-                ("Enterprise".equalsIgnoreCase(required.name()) ? "-startEnterpriseTrial" : "-startTeamsTrial") + " -IAgreeToTheEula."));
+    public FlywayEditionUpgradeRequiredException(final Tier current, final String feature) {
+        super("Upgrade required: " + feature + " is not supported by " +
+            (current == null ? "OSS" : current.getDisplayName())
+            + ".\n"
+            + (current != null
+            ? "If you would like to start a free Enterprise trial, please run auth -startEnterpriseTrial -IAgreeToTheEula.\n"
+            + "Check the licensing documentation for information on how to license Flyway: "
+            + FlywayDbWebsiteLinks.LICENSING_ACTIVATING_CLI
+            : "Download Redgate Edition for free: "
+                + FlywayDbWebsiteLinks.REDGATE_EDITION_DOWNLOAD
+                + ".\n"
+                + "Once you have installed Redgate Edition, you can start a free Enterprise trial by running auth -startEnterpriseTrial -IAgreeToTheEula."));
     }
 }

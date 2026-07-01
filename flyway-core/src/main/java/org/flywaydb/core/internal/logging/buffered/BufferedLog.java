@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class BufferedLog implements Log {
-    public final List<BufferedLogMessage> bufferedLogMessages = Collections.synchronizedList(new ArrayList<>());
-
-    @Override
-    public boolean isDebugEnabled() {
-        return true;
-    }
+    private final List<BufferedLogMessage> bufferedLogMessages = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public void debug(String message) {

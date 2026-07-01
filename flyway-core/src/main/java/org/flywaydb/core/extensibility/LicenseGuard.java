@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
  */
 package org.flywaydb.core.extensibility;
 
-import java.lang.module.ModuleDescriptor.Version;
 import lombok.CustomLog;
 import lombok.experimental.ExtensionMethod;
 import org.flywaydb.core.api.configuration.Configuration;
@@ -27,40 +26,12 @@ import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.license.FlywayEditionUpgradeRequiredException;
 import org.flywaydb.core.internal.license.FlywayPermit;
 
-
-
-
-
-
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import org.flywaydb.core.internal.util.VersionUtils;
 
 @CustomLog
 @ExtensionMethod(Tier.class)
 public class LicenseGuard {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     private static final FlywayPermit OSS_PERMIT = new FlywayPermit("Anonymous", null, null, false, false, false);
-
-
     public static void guard(Configuration configuration, List<Tier> editions, String featureName) {
         FlywayPermit flywayPermit = getPermit(configuration);
         if ((flywayPermit.getPermitExpiry() != null && flywayPermit.getPermitExpiry().before(new Date())) ||
@@ -78,7 +49,7 @@ public class LicenseGuard {
             }
         }
 
-        throw new FlywayEditionUpgradeRequiredException(editions.get(0), flywayPermit.getTier(), featureName);
+        throw new FlywayEditionUpgradeRequiredException(flywayPermit.getTier(), featureName);
     }
 
     public static boolean isLicensed(Configuration configuration, List<Tier> editions) {
@@ -97,74 +68,31 @@ public class LicenseGuard {
         return false;
     }
 
-
-
-
-
-
-
-
-
-
-
-
+    public static void submitPur(Configuration configuration, String eventType, Database database) {
+        configuration.getPluginRegister().getInstanceOf(LicenseSupport.class).submitPur(configuration, eventType, database);
+    }
 
     public static FlywayPermit getPermit(Configuration configuration) {
         return getPermit(configuration, true);
     }
 
+    public static FlywayPermit getPermitNoCache(Configuration configuration) {
+        return getPermit(configuration, false);
+    }
+
     public static Tier getTier(Configuration configuration) {
-        return getPermit(configuration, true).getTier();
+        return getPermit(configuration).getTier();
     }
 
     public static String getTierAsString(Configuration configuration) {
-        return getPermit(configuration, true).getTier().asString();
+        return getPermit(configuration).getTier().asString();
     }
 
-    public static FlywayPermit getPermit(Configuration configuration, boolean fromCache) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-         return OSS_PERMIT;
-
+    private static FlywayPermit getPermit(Configuration configuration, boolean fromCache) {
+        return configuration.getPluginRegister().getInstanceOf(LicenseSupport.class).getPermit(configuration, fromCache);
     }
 
-    public static void dropCache() {
-
-
-
-
-
-
-
-
-
-
-
+    public static List<String> consumeDeferredWarnings(Configuration configuration) {
+        return configuration.getPluginRegister().getInstanceOf(LicenseSupport.class).consumeDeferredWarnings(configuration);
     }
 }

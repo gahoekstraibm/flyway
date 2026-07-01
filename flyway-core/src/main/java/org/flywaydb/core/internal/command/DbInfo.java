@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class DbInfo {
     private final SchemaHistory schemaHistory;
     private final Configuration configuration;
     private final Database database;
-    private final CallbackExecutor callbackExecutor;
+    private final CallbackExecutor<Event> callbackExecutor;
     private final Schema[] schemas;
 
     public MigrationInfoService info() {
@@ -49,7 +49,7 @@ public class DbInfo {
         try {
             migrationInfoService =
                     new MigrationInfoServiceImpl(migrationResolver, schemaHistory, database, configuration,
-                                                 configuration.getTarget(), configuration.isOutOfOrder(), ValidatePatternUtils.getIgnoreAllPattern(), configuration.getCherryPick());
+                                                 configuration.getTarget(), configuration.isOutOfOrder(), ValidatePatternUtils.getIgnoreAllPattern());
             migrationInfoService.refresh();
             migrationInfoService.setAllSchemasEmpty(schemas);
         } catch (FlywayException e) {

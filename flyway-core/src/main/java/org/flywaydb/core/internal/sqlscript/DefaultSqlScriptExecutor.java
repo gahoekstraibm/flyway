@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@
 package org.flywaydb.core.internal.sqlscript;
 
 import lombok.CustomLog;
-import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.callback.Error;
 import org.flywaydb.core.api.callback.Event;
 import org.flywaydb.core.api.callback.Warning;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.api.exception.FlywayBlockStatementExecutionException;
+import org.flywaydb.core.extensibility.ErrorOverridesSupport;
 import org.flywaydb.core.internal.callback.CallbackExecutor;
 import org.flywaydb.core.internal.jdbc.JdbcTemplate;
 import org.flywaydb.core.internal.jdbc.Result;
@@ -46,19 +46,17 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
     /**
      * The callback executor.
      */
-    private final CallbackExecutor callbackExecutor;
+    private final CallbackExecutor<Event> callbackExecutor;
 
+    /**
+     * Whether this is part of an undo migration or a regular one.
+     */
+    private final boolean undo;
 
-
-
-
-
-
-
-
-
-
-
+    /**
+     * The statement interceptor or {@code null} if this is a live run against the database.
+     */
+    private final StatementInterceptor statementInterceptor;
 
     /**
      * The maximum number of statements to include in a batch.
@@ -75,50 +73,50 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
      */
     protected final boolean outputQueryResults;
 
-
+    private ErrorOverridesSupport errorOverridesSupport;
 
     public DefaultSqlScriptExecutor(JdbcTemplate jdbcTemplate,
-                                    CallbackExecutor callbackExecutor, boolean undo, boolean batch, boolean outputQueryResults,
+                                    CallbackExecutor<Event> callbackExecutor, boolean undo, boolean batch, boolean outputQueryResults,
                                     StatementInterceptor statementInterceptor
                                    ) {
         this.jdbcTemplate = jdbcTemplate;
-
-
-
-
+        this.undo = undo;
+        this.statementInterceptor = statementInterceptor;
         this.callbackExecutor = callbackExecutor;
         this.outputQueryResults = outputQueryResults;
         this.batch = batch;
     }
 
+    private ErrorOverridesSupport getErrorOverridesSupport(Configuration config) {
+        if (errorOverridesSupport == null) {
+            errorOverridesSupport = config.getPluginRegister().getInstanceOf(ErrorOverridesSupport.class);
+        }
+        return errorOverridesSupport;
+    }
+
     @Override
     public List<Results> execute(SqlScript sqlScript, Configuration config) {
         final List<Results> results = new ArrayList<>(List.of());
-
-
-
-
-
+        if (statementInterceptor != null) {
+            statementInterceptor.sqlScript(sqlScript.getResource());
+        }
 
         List<SqlStatement> batchStatements = new ArrayList<>();
 
         try (SqlStatementIterator sqlStatementIterator = sqlScript.getSqlStatements()) {
             SqlStatement sqlStatement;
             while ((sqlStatement = sqlStatementIterator.next()) != null) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-                if (batch) {
+                if (statementInterceptor != null) {
+                    try {
+                        handleEachMigrateOrUndoStatementCallback(Event.BEFORE_EACH_UNDO_STATEMENT, Event.BEFORE_EACH_MIGRATE_STATEMENT, sqlStatement.getSql() + sqlStatement.getDelimiter(), null, null);
+                    } catch (FlywayBlockStatementExecutionException e) {
+                        LOG.debug("Statement on line " + sqlStatement.getLineNumber() + " + skipped due to " + e.getMessage());
+                        continue;
+                    }
+                    logStatementExecution(sqlStatement);
+                    statementInterceptor.sqlStatement(sqlStatement);
+                    handleEachMigrateOrUndoStatementCallback(Event.AFTER_EACH_UNDO_STATEMENT, Event.AFTER_EACH_MIGRATE_STATEMENT, sqlStatement.getSql() + sqlStatement.getDelimiter(), Collections.<Warning>emptyList(), Collections.<Error>emptyList());
+                } else if (batch) {
                     if (sqlStatement.isBatchable()) {
                         logStatementExecution(sqlStatement);
                         batchStatements.add(sqlStatement);
@@ -147,11 +145,9 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
     }
 
     protected void logStatementExecution(SqlStatement sqlStatement) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Executing "
-                              + (batch && sqlStatement.isBatchable() ? "batchable " : "")
-                              + "SQL: " + sqlStatement.getSql());
-        }
+        LOG.debug("Executing "
+            + (batch && sqlStatement.isBatchable() ? "batchable " : "")
+            + "SQL: " + sqlStatement.getSql());
     }
 
     private Results executeBatch(JdbcTemplate jdbcTemplate, SqlScript sqlScript, List<SqlStatement> batchStatements, Configuration config) {
@@ -171,10 +167,9 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
             sqlBatch.add(sqlStatement.getSql());
         }
 
-        Results results = jdbcTemplate.executeBatch(sqlBatch, config);
+        Results results = jdbcTemplate.executeBatch(sqlBatch);
 
         if (results.getException() != null) {
-            handleException(results, sqlScript, batchStatements.get(0), config);
 
             for (int i = 0; i < results.getResults().size(); i++) {
                 SqlStatement sqlStatement = batchStatements.get(i);
@@ -187,6 +182,7 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
                     handleUpdateCount(updateCount);
                 }
             }
+            handleException(results, sqlScript, batchStatements.get(0), config);
             return results;
         }
 
@@ -213,13 +209,13 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
 
         if (results.getException() != null) {
             handleEachMigrateOrUndoStatementCallback(Event.AFTER_EACH_UNDO_STATEMENT_ERROR, Event.AFTER_EACH_MIGRATE_STATEMENT_ERROR, sql, results.getWarnings(), results.getErrors());
-            printWarnings(results);
+            printWarnings(results, config);
             handleException(results, sqlScript, sqlStatement, config);
             return null;
         }
 
         handleEachMigrateOrUndoStatementCallback(Event.AFTER_EACH_UNDO_STATEMENT, Event.AFTER_EACH_MIGRATE_STATEMENT, sql, results.getWarnings(), results.getErrors());
-        printWarnings(results);
+        printWarnings(results, config);
         handleResults(results);
         return results;
     }
@@ -249,41 +245,18 @@ public class DefaultSqlScriptExecutor implements SqlScriptExecutor {
     }
 
     protected void handleException(Results results, SqlScript sqlScript, SqlStatement sqlStatement, Configuration config) {
-
-
-
-
-                throw new FlywaySqlScriptException(sqlScript.getResource(), sqlStatement, results.getException());
-
-
-
-
+        getErrorOverridesSupport(config).handleException(results, sqlScript, sqlStatement, config);
     }
 
-    private void printWarnings(Results results) {
-        for (Warning warning : results.getWarnings()) {
-
-
-
-                if ("00000".equals(warning.getState())) {
-                    LOG.info("DB: " + warning.getMessage());
-                } else {
-                    LOG.warn("DB: " + warning.getMessage()
-                                     + " (SQL State: " + warning.getState() + " - Error Code: " + warning.getCode() + ")");
-                }
-
-
-
-        }
+    private void printWarnings(Results results, Configuration config) {
+        getErrorOverridesSupport(config).printWarnings(results, config);
     }
 
     private void handleEachMigrateOrUndoStatementCallback(Event eventUndo, Event eventMigrate, String sql, List<Warning> warnings, List<Error> errors) {
-
-
-
-
-
-
+        if (undo) {
+            callbackExecutor.onEachMigrateOrUndoStatementEvent(eventUndo, sql, warnings, errors);
+            return;
+        }
 
         callbackExecutor.onEachMigrateOrUndoStatementEvent(eventMigrate, sql, warnings, errors);
     }

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
  */
 package org.flywaydb.core.internal.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.toml.TomlMapper;
 import lombok.experimental.ExtensionMethod;
 import org.flywaydb.core.api.FlywayException;
 
@@ -29,14 +29,11 @@ import org.flywaydb.core.api.FlywayException;
 public class ObjectMapperFactory {
     public static ObjectMapper getObjectMapper(String file) {
         String extension = getFileExtension(file);
-        switch (extension.toLowerCase()) {
-            case ".json":
-                return new JsonMapper();
-            case ".toml":
-                return new TomlMapper();
-            default:
-                throw new FlywayException("No mapper found for '" + extension + "' extension");
-        }
+        return switch (extension.toLowerCase()) {
+            case ".json" -> JsonMapper.builder().build();
+            case ".toml" -> TomlMapper.builder().build();
+            default -> throw new FlywayException("No mapper found for '" + extension + "' extension");
+        };
     }
 
     private static String getFileExtension(String filename) {

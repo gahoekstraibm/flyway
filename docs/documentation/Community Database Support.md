@@ -18,6 +18,8 @@ Flyway supports migrations for a large number of database platforms in a unified
 *   A JDBC driver for your database.
 *   A Java IDE that builds with Java 17 or higher.
 
+**Note:** Java 21 will be required starting in Flyway v13.
+
 **Note for contributors:** Flyway will not typically package database drivers for community databases in the CLI bundle so we will need to know where end-users can download the preferred JDBC driver for your database.
 
 ## Getting started
@@ -35,8 +37,6 @@ You should be able to open the project and see a number of modules.
     *   `createTransactionalExecutionTemplate` - To use a custom ExecutionTemplate
     *   `setDefaultConnectionProps` - To set custom default connection properties
     *   `shutdownDatabase` - To run any necessary code to cleanup the database on shutdown
-    *   `detectUserRequiredByUrl` - To skip prompting for user if the URL contains user information (e.g. user property, login file)
-    *   `detectPasswordRequiredByUrl` - To skip prompting for password if the URL contains password information (e.g. key file, or password property)
 
 1.  Create class `FooConnection` subclassed from `Connection<FooDatabase>`This represents a JDBC connection to your database. You probably won't use it in isolation but it is an important component of a `JdbcTemplate`, which provides numerous convenience methods for running queries on your database.  
     In the constructor of `FooConnection`, you can use the `jdbcTemplate` field of `Connection` to query for any database properties that you need to acquire immediately and maintain as part of the state of the connection. You will need to override the following methods as a minimum:
@@ -87,7 +87,7 @@ You should be able to open the project and see a number of modules.
 ### How to test your plugin
 #### Testing with a prebuilt Flyway CLI package
 This is a quick and easy way to verify that things are working as you expect
-1. Download and install the latest [Flyway CLI](https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/) package
+1. Download and install the latest [Flyway CLI](https://github.com/flyway/flyway/releases/latest) package
 1. Put your freshly built `flyway-database-foo.jar` and JDBC driver in the `/jars` folder of your Flyway install directory.
 1. Configure Flyway to talk to your database
 1. Run your tests
@@ -96,7 +96,7 @@ This is a quick and easy way to verify that things are working as you expect
 #### Testing Flyway with source code
 This is more complex but allows you to set breakpoints and debug more easily.
 
-Get your environment setup for [developing flyway](documentation/setup)
+Get your environment setup for [developing flyway](setup)
 
 Copy the file `/flyway-commandline/src/main/assembly/flyway.toml.example` to an accessible location on your machine and rename it to `flyway.toml`. 
 This location will be a temporary 'scratch' area for testing. Use this copy to set up the following properties:
@@ -119,7 +119,7 @@ You can now set up a run configuration in your IDE that will compile Flyway and 
 
 Flyway itself should start. Since Flyway doesn't yet support your database you should see a message like:
 
-`org.flywaydb.core.api.FlywayException: ERROR: No database found to handle jdbc:FooDb://<host>:<port>/<databasename>`
+`org.flywaydb.core.api.FlywayException: ERROR: No Flyway database plugin found to handle jdbc:FooDb://<host>:<port>/<databasename>`
 
 You're now ready to start adding that database support. We're going to assume your database platform is called **FooDb**. 
 Change the obvious naming conventions to suit your database.
@@ -145,6 +145,6 @@ You will need to have:
 
 ### Once your PR is accepted
 * We will add it to the flyway command line module and assemblies.
-* We'll include in the next release of FLyway
+* We'll include in the next release of Flyway
 
 

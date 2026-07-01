@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,19 @@
  */
 package org.flywaydb.core.internal.proprietaryStubs;
 
+import static org.flywaydb.core.internal.util.TelemetryUtils.getTelemetryManager;
+
 import java.util.List;
 import java.util.Locale;
-import org.flywaydb.core.FlywayTelemetryManager;
+import org.flywaydb.core.TelemetrySpan;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.api.output.OperationResult;
 import org.flywaydb.core.extensibility.CommandExtension;
+import org.flywaydb.core.extensibility.EventTelemetryModel;
 import org.flywaydb.core.internal.license.FlywayRedgateEditionRequiredException;
 
-public class GenerateCommandExtensionStub implements CommandExtension {
+public class GenerateCommandExtensionStub implements CommandExtension<OperationResult> {
     private static final String FEATURE_NAME = "Generate";
     public static final String COMMAND = FEATURE_NAME.toLowerCase(Locale.ROOT);
     public static final String DESCRIPTION = "Generates migration scripts based on the differences found by running the diff command.";
@@ -44,11 +47,11 @@ public class GenerateCommandExtensionStub implements CommandExtension {
     }
 
     @Override
-    public OperationResult handle(final String command,
-        final Configuration config,
-        final List<String> flags,
-        final FlywayTelemetryManager flywayTelemetryManager) throws FlywayException {
-        throw new FlywayRedgateEditionRequiredException(FEATURE_NAME);
+    public OperationResult handle(final Configuration config,
+        final List<String> flags) throws FlywayException {
+        return TelemetrySpan.trackSpan(new EventTelemetryModel(COMMAND, getTelemetryManager(config)), (telemetryModel) -> {
+            throw new FlywayRedgateEditionRequiredException(FEATURE_NAME);
+        });
     }
 
     @Override

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@
  */
 package org.flywaydb.core.internal.sqlscript;
 
+import java.sql.SQLException;
 import lombok.CustomLog;
 import lombok.Getter;
+import org.flywaydb.core.api.logging.LogFactory;
 import org.flywaydb.core.api.resource.Resource;
 import org.flywaydb.core.internal.exception.FlywaySqlException;
-
-import java.sql.SQLException;
 
 /**
  * This specific exception thrown when Flyway encounters a problem in SQL script
@@ -32,26 +32,47 @@ import java.sql.SQLException;
 @CustomLog
 public class FlywaySqlScriptException extends FlywaySqlException {
     /**
-     * @return The resource containing the failed statement.
+     * The resource containing the failed statement.
      */
     @Getter
     private final Resource resource;
 
     private final SqlStatement statement;
 
+    private final String decoratedMessage;
+
     public static final String STATEMENT_MESSAGE = "Run Flyway with -X option to see the actual statement causing the problem";
 
     /**
      * Creates new instance of FlywaySqlScriptException.
      *
-     * @param resource The resource containing the failed statement.
-     * @param statement The failed SQL statement.
+     * @param resource     The resource containing the failed statement.
+     * @param statement    The failed SQL statement.
      * @param sqlException Cause of the problem.
      */
-    public FlywaySqlScriptException(Resource resource, SqlStatement statement, SQLException sqlException) {
-        super(resource == null ? "Script failed" : "Script " + resource.getFilename() + " failed", sqlException);
+    public FlywaySqlScriptException(final Resource resource,
+        final SqlStatement statement,
+        final SQLException sqlException,
+        final String environment) {
+        super(generateMessage(resource, environment), sqlException);
         this.resource = resource;
         this.statement = statement;
+
+        final StringBuilder builder = new StringBuilder(super.getMessage());
+        if (resource != null) {
+            builder.append("Location   : ")
+                .append(resource.getAbsolutePath())
+                .append(" (")
+                .append(resource.getAbsolutePathOnDisk())
+                .append(")\n");
+        }
+        if (statement != null) {
+            builder.append("Line       : ").append(getLineNumber()).append("\n");
+            builder.append("Statement  : ")
+                .append(LogFactory.isDebugEnabled() ? getStatement() : STATEMENT_MESSAGE)
+                .append("\n");
+        }
+        this.decoratedMessage = builder.toString();
     }
 
     /**
@@ -74,14 +95,20 @@ public class FlywaySqlScriptException extends FlywaySqlException {
 
     @Override
     public String getMessage() {
-        String message = super.getMessage();
+        return decoratedMessage;
+    }
+
+    private static String generateMessage(final Resource resource, final String environment) {
+        final StringBuilder messageBuilder = new StringBuilder("Failed to execute script");
+
         if (resource != null) {
-            message += "Location   : " + resource.getAbsolutePath() + " (" + resource.getAbsolutePathOnDisk() + ")\n";
+            messageBuilder.append(" ").append(resource.getFilename());
         }
-        if (statement != null) {
-            message += "Line       : " + getLineNumber() + "\n";
-            message += "Statement  : " + (LOG.isDebugEnabled() ? getStatement() : STATEMENT_MESSAGE) + "\n";
+
+        if (!"default".equalsIgnoreCase(environment)) {
+            messageBuilder.append(" against ").append(environment).append(" environment");
         }
-        return message;
+
+        return messageBuilder.toString();
     }
 }

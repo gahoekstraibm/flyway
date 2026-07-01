@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-mysql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class MySQLSchema extends Schema<MySQLDatabase, MySQLTable> {
                                                 // when the event scheduled is DISABLED or in some rare cases OFF
                                                 + (database.eventSchedulerQueryable ? " UNION ALL (SELECT 1 as found FROM information_schema.events WHERE event_schema=? LIMIT 1)" : "")
                                                 + ") as all_found",
-                                        params.toArray(new String[0])
+                                        params.toArray(String[]::new)
                                        ) == 0;
     }
 

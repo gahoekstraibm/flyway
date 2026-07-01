@@ -1,14 +1,1764 @@
 <div class="call-to-action">
 <ul>
     <li>Learn more about <a href="https://www.red-gate.com/products/flyway/editions" style="font-size: larger;" title="Flyway editions">Flyway Editions</a> capabilities </li>
-    <li>Download <a href="https://documentation.red-gate.com/fd/command-line-184127404.html" style="font-size: larger;" title="Flyway CLI">Flyway CLI</a> </li>
+    <li>Download <a href="https://documentation.red-gate.com/fd/command-line-277579359.html" style="font-size: larger;" title="Flyway CLI">Flyway CLI</a> </li>
 </ul>
-<hr></hr>
+<hr />
 
 </div>
 <div class="col-md-9">
+  <div class="release">
+        <h2 id="12.10.0">Flyway 12.10.0 (2026-06-30)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>smart docker provisioner keepAlive reuses the build database container across Flyway commands</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>filesystem location 'not found' messages now report the effective working directory and prompt you to check it, since running Flyway from the wrong working directory (without -workingDirectory) is a common cause</li>
+            <li>Native Connectors mode is now enabled by default for Cassandra</li>
+            <li>outOfOrder mode is now reported at info level instead of as a warning</li>
+            <li>The preview `docker` environment provisioner has been renamed to `docker-compose`. Existing `docker` provisioner configurations that use a compose file continue to work via automatic forwarding.</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>A missing callback location (including the default `filesystem:callbacks`) is now skipped instead of being logged as an error or failing the command</li>
+            <li>drift resolution script generation failures no longer fail the check drift command; drift is still reported and any scripts that can be generated are still written</li>
+            <li>Fixed drift resolution failing to generate scripts when the drift included object types whose names contain spaces (e.g. user-defined types)</li>
+            <li>The smart docker provisioner now starts Postgres and MySQL build containers with valid credentials and a usable default schema, so provisioning and migrating against them succeeds</li>
+        </ul>
+
+        <h3>Performance improvements</h3>
+        <ul>
+            <li>skip building an unused Flyway instance for configuration-only commands (e.g. constructMigrationName, parseMigrationName, comparison-capabilities), reducing their startup latency</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded com.fasterxml.jackson.core:jackson-databind from 2.21.2 to 2.22.0</li>
+            <li>Upgraded tools.jackson.core:jackson-databind from 3.1.1 to 3.1.4</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare to 1.58.5.4666</li>
+        </ul>
+
+  </div>
 
   <div class="release">
+        <h2 id="12.9.0">Flyway 12.9.0 (2026-06-18)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Added a check.driftResolutionFolder setting to configure the folder in which drift resolution scripts are generated when drift is detected</li>
+            <li>Flyway CLI now exits with a distinct exit code derived from the error code when a FlywayException is thrown</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>check drift, changes and dryrun commands now report phase-level progress when outputProgress is enabled</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare to 1.58.4.4526</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.8.1">Flyway 12.8.1 (2026-06-05)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fix FLYWAY_TOKEN and FLYWAY_EMAIL environment variables not being recognised for PAT authentication</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare to 1.58.3.4420</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.8.0">Flyway 12.8.0 (2026-06-04)</h2>
+
+        <h3>Known Issues</h3>
+        <ul>
+          <li>There is an issue in the resolution of some FLYWAY_ environmental variables. We suggest you use `12.8.1` or later</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Flyway now warns when an offline permit is due to expire within the next 30 days</li>
+            <li>Improved progress reporting for PostgreSQL, MySQL and SQLite</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Oracle EXEC statements preceded by a comment now parse correctly</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>API users now must include a flyway `Licensing` module dependency to be recognized as Redgate edition</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare to 1.58.3.4416</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.7.0">Flyway 12.7.0 (2026-05-29)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway can load custom SQLFluff rules for use in the Check command</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>API users are now required to include the `flyway-proprietary` module to use Redgate proprietary features</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare to 1.58.2.4353</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.6.2">Flyway 12.6.2 (2026-05-21)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Environment Variable resolver syntax now works in all flyway configuration parameters, not just environment connection properties</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4238">Issue 4238</a>
+                Cockroach v26 is now supported
+            </li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>fix crash in `check code` when SQLFluff emits LXR violations for files containing a UTF-8 BOM</li>
+            <li>Fixed misleading "try running the 'auth' command" warning appearing when already running `auth` command</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded ch.qos.logback:logback-classic from 1.2.3 to 1.2.13</li>
+            <li>Upgraded org.apache.derby:derby from 10.16.1.1 to 10.17.1.0</li>
+            <li>Upgraded org.apache.logging.log4j:log4j-core from 2.17.1 to 2.25.4</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare to 1.58.1.4262</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.6.1">Flyway 12.6.1 (2026-05-12)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>flyway repair against a dry-run target no longer fails for SQL baseline migrations</li>
+            <li>license text files now included in Flyway distributions</li>
+            <li>Fixed SARIF output for check -code</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli to 1.58.1.4056</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.6.0">Flyway 12.6.0 (2026-05-08)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now supports Native Connectors mode for the Deploy command</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>`Auth` command now defers to existing license providers instead of redundantly re-authenticating. License output now reports the acquisition method.</li>
+            <li>configuration errors caused solely by obsolete parameters now throw ObsoleteConfigurationParametersException, exposing the obsolete parameters as structured data</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4229">Issue 4229</a>
+                Gradle plugin is now compatible with Gradle's configuration cache for environment variable and system property inputs
+            </li>
+            <li>obsolete parameter exception payload now includes a `reason` field explaining why each parameter is obsolete</li>
+            <li>simplified namespace short-circuiting (aka scoped namespacing) so that mixing scoped and unscoped namespaces is allowed</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4232">Issue 4232</a>
+                Add support for `DROP ... IF EXISTS` and `CREATE ... IF NOT EXISTS` for Oracle parser
+            </li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4230">Issue 4230</a>
+                Only create synonyms for Oracle SHTs when the name includes lower case characters
+            </li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded adoptium/temurin25-binaries from 25.0.2+10 to 25.0.3+9</li>
+            <li>Bumped aws-secretsmanager-jdbc from 2.0.4 to 2.1.0</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli to 1.58.0.3966</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.5.0">Flyway 12.5.0 (2026-04-27)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now supports Azure Key Vault as a secrets resolver</li>
+            <li>Flyway now supports Native Connectors mode for Cassandra. The JDBC-based approach has been deprecated</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>`flyway prepare` with `-prepare.source=schemaModel` now fails with a clear error when the configured schema model directory does not exist</li>
+            <li>"initSql" has been deprecated. Please use the "afterConnect" callback instead</li>
+            <li>The Flyway Secret Manager feature is no longer available under Teams license</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fix pluginConfigurations in the Maven and Gradle plugins not being handled by Flyway</li>
+            <li>Retry Informix table drops on ISAM file lock errors</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.52.6.3589 to 1.55.1.3732</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.4.0">Flyway 12.4.0 (2026-04-14)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Added a new rule: RG23 - Configurable forbidden alias names</li>
+            <li>Add a "checksumIncludeReferencedScripts" parameter under "Oracle" namespace to control whether referenced scripts are included in checksum calculation</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fix NullPointerException when comparison engine returns null collection fields</li>
+            <li>in json output of check code, "file_pos", "file_pos_end" properties will now adjust for windows line endings present in scripts. Suggested fix content will now attempt to match the line endings used by the script.</li>
+            <li>Fix a bug where the "validate" operation may cause a "NullPointerException"</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4221">Issue 4221</a>
+                Fixed Snowflake connectivity failure after JDBC driver update when PUBLIC schema does not exist
+            </li>
+            <li>fix CLI scoped namespace resolution when nested parameters are not immediately after their flag</li>
+            <li>Fixed incorrect file position returned in code review json for some types of sql fluff insertion fixes</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4223">Issue 4223</a>
+                Support the Gradle configuration cache in flyway-gradle-plugin
+            </li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.52.3.3436 to 1.52.6.3589</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.3.0">Flyway 12.3.0 (2026-03-31)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Added a new rule: RG22 - Ensure the same table is not created and then dropped or vice versa in the same script</li>
+            <li>Flyway includes SQLite support in Native Connectors mode</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Added additional properties to json output of check code: "engine", "file_pos", "file_pos_end" and (optional) "fixes".</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fix RG18 and RG19 handling of bracketed identifiers</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.52.1.3430 to 1.52.3.3436</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.2.0">Flyway 12.2.0 (2026-03-26)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Added a new rule: RG19 - Simple check to ensure table names are not pluralized. More complex pluralizations should be handled by hand.</li>
+            <li>Added a new rule: RG20 - Object names should be contained within square brackets.</li>
+            <li>`check -code` now generates a SARIF 2.1.0 report file (`.sarif`) alongside JSON and HTML reports, enabling integration with GitHub Code Scanning, Azure DevOps, and other SARIF-compatible tools</li>
+            <li>Add RG21, a configurable rule that can enforce naming prefixes for multiple object types. (Table, View, Procedure, Function, Schema)</li>
+            <li>added `check.code.noqaSeverity` setting for configuring the severity of the warning about use of `--noqa` in migrations checked by SQLFluff as part of `check -code`</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Code Analysis renamed to Code Review in output from check command</li>
+            <li>the regex rule engine used by check -code will no longer automatically convert line endings before applying rules for the contents of migrations</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Flyway now correctly exits with a non-zero exit code when migrations fail and multiple report generators are loaded</li>
+            <li>Fix parsing of backticks for quoted strings in MySQL</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Updated Snowflake JDBC driver to 4.0.2</li>
+            <li>Upgrade aws-secretsmanager to 2.0.4</li>
+        </ul>
+
+        <h3>Internal dependency</h3>
+        <ul>
+            <li>Updated RgCompare.Cli from 1.52.0.3327 to 1.52.0.3345</li>
+            <li>Updated RgCompare.Cli from 1.52.0.3345 to 1.52.0.3385</li>
+            <li>Upgraded RgCompare.Cli from 1.52.1.3407 to 1.52.1.3410</li>
+            <li>Upgraded RgCompare.Cli from 1.52.1.3410 to 1.52.1.3424</li>
+            <li>Upgraded RgCompare.Cli from 1.52.1.3424 to 1.52.1.3430</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.1.1">Flyway 12.1.1 (2026-03-17)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Implement non statement level callbacks in Native Connectors for undo, info, baseline and repair</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>`serverId` in Maven plugin now correctly respects user-configured value via `flyway.serverId`</li>
+            <li>fixed NPE in Oracle database type when using instrumentation agents like JaCoCo</li>
+            <li>fix NullPointerException in SnapshotVersionRetriever when applied migrations include null-version entries (repeatable migrations, SCHEMA markers)</li>
+            <li>snapshot no longer saved during dry run for migrate, undo, and deploy commands</li>
+            <li>Gradle plugin now correctly reads `connectRetries`, `connectRetriesInterval`, and `failOnMissingLocations` from the flyway extension configuration</li>
+            <li>Java Migrations correctly show the script path when an exception is thrown due to duplicated versions</li>
+        </ul>
+
+        <h3>Performance improvements</h3>
+        <ul>
+            <li>improved startup time for lightweight CLI commands like `flyway version` and `flyway auth`</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgrade lombok to 1.18.44</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.1.0">Flyway 12.1.0 (2026-03-09)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now supports using the 'init' command to automatically update TOML configuration files for Desktop users</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>InsertRowLock now supports custom locking strategies for databases without primary key support</li>
+            <li>Removed SQL Server 'IgnoreSynonymDependencies' comparison option</li>
+            <li>changed the snapshot history limit default to 5, so that ad-hoc rollbacks are available for recent deployments by default</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Foundational support for Babelfish added.</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fix NullPointerException when executing callbacks where callback name is null</li>
+            <li>drift resolution folder path in JSON output now serializes as an absolute file path string instead of a URI</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgrade Jetty-server from 12.0.21 to 12.1.6</li>
+            <li>Upgrade Jackson from 3.0.4 to 3.1.0</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.0.3">Flyway 12.0.3 (2026-02-27)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>report filenames and drift resolution folder now included in JSON output when check -drift fails with failOnDrift enabled</li>
+            <li>Fixed an issue where Flyway failed when applied migrations specified in 'cherryPick' were not found in Native Connectors mode</li>
+            <li>Oracle Schema History Table synonyms no longer appear as drift in Check reports</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgrade Jackson from 2.19.1 to 3.0.4</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.0.2">Flyway 12.0.2 (2026-02-20)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Add flag `-check.generateReport` to control whether check should write the result to a file</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>flyway check now honours environment-specific cleanDisabled override when no provisioner set for the build database</li>
+            <li>running snapshot against an Oracle database without specifying schemas will now use the default schema if set</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Auth can now be output as JSON when `outputType=json` is set</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.0.1">Flyway 12.0.1 (2026-02-12)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>check -changes now honours target parameter for setting a target version</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Added alias for azureAdInteractive resolver to entraId</li>
+            <li>Redgate Clone documentation marked as deprecated and Flyway Desktop sections removed</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Oracle now uses synonyms on new schema and snapshot history tables to enable them to be called unquoted</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed issue where configuration parameters would not be listed when running --help on check with a flag specified</li>
+            <li>Fixed issue where drift resolution filter generation would fail when drift found involving objects with no schema</li>
+            <li>Fix static data ordering when on Windows and using a string primary key</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Bump Oauth2-oidc-sdk to 11.32</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="12.0.0">Flyway 12.0.0 (2026-01-28)</h2>
+
+        <h3>Breaking changes</h3>
+        <ul>
+            <li>The 'passOnRegexMatch' field in the Code Analysis Regex Rule is no longer supported</li>
+            <li>The 'plugin' namespace for configuration parameters is no longer supported</li>
+            <li>The environment variable 'REDGATE_LICENSING_PERMIT_PATH' has been replaced by the standard 'FLYWAY_OFFLINE_PERMIT_PATH'</li>
+            <li>Flyway no longer ships the default Redgate regex ruleset</li>
+            <li>Reports now display results from separate flyway command invocations on the main page. Reports no longer contain a timestamp dropdown.</li>
+            <li>The 'majorRules', 'minorRules', 'majorTolerance', and 'minorTolerance' settings have been removed and are now no longer supported in Code Analysis</li>
+            <li>MongoDB support via JDBC has been removed. MongoDB is now supported only in Native Connectors mode</li>
+            <li>Support for SQLFluff versions prior to '1.3' has been removed</li>
+        </ul>
+        You can find out more at <a href="https://documentation.red-gate.com/fd/flyway-v12-updating-from-v11-329777771.html">Flyway V12 - updating from V11</a>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4194">Issue 4194</a>
+                Add support for nested IF statements in Snowflake parser
+            </li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Changed the method signature of the public 'CommandExtension' interface</li>
+            <li>CompositeResult is now a record</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.48.1.2582 to 1.50.1.2648</li>
+        </ul>
+
+        <p>
+            Thanks to 023-dev for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.20.3">Flyway 11.20.3 (2026-01-26)</h2>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.48.1.2503 to 1.48.1.2582</li>
+            <li>Upgraded sqlfluff from 3.5.0 to 4.0.0</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4152">Issue 4152</a>
+                Upgrade google-cloud-spanner to 2.34.1 and google-cloud-storage to 2.60.0 to fix CVE-2025-55163
+            </li>
+        </ul>
+
+        <p>
+            Thanks to lesniakd for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.20.2">Flyway 11.20.2 (2026-01-15)</h2>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.47.1.2438 to 1.48.1.2503</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.20.1">Flyway 11.20.1 (2026-01-08)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>generated drift incorporate script will now contain object existence checks for SQL Server</li>
+        </ul>
+
+        <h3>Performance improvements</h3>
+        <ul>
+            <li>When `check` is called with both `-drift` and `-changes` flags, `-drift` is now always run first as there will be a performance improvement when using a build environment</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.47.0.2331 to 1.47.1.2438</li>
+            <li>Upgrade Netty from 4.2.7 to 4.2.9</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.20.0">Flyway 11.20.0 (2025-12-22)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>`model`, `generate`, and `prepare` commands now return full selection output instead of a list of names of included dependencies</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.46.0.2246 to 1.47.0.2331</li>
+            <li>Upgrade MariaDB from 2.7.11 to 2.7.13</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.19.1">Flyway 11.19.1 (2025-12-18)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>It is now possible to switch off automatic dependency handling for Oracle when performing comparison operations. This is done by setting `includeDependencies = false` in the `[redgateCompare.oracle.options.behavior]` section of the config file.</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>LICENSES-THIRD-PARTY.txt format has changed. Will now refer to the shipped license file instead of duplicating the license text.</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Verified compatibility for SingleStore 8.9</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where Flyway treated skipped SQLFluff code analysis as a successful linting run</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.45.1.2176 to 1.46.0.2246</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.19.0">Flyway 11.19.0 (2025-12-08)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed issue when running `check -drift` against a database with no snapshot history table</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>CLI now ships with Java 25</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.45.1.2083 to 1.45.1.2176</li>
+            <li>Upgraded MongoDB Sync Driver to 5.6.1</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.18.0">Flyway 11.18.0 (2025-11-27)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>'testConnection' command is now supported in Native Connectors mode</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>When using Oracle in 'Native Connectors' mode, Flyway now fails early during database initialization if the migration execution tool cannot connect</li>
+            <li>When using MongoDB in 'Native Connectors' mode, Flyway now fails early during database initialization if the migration execution tool cannot connect</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fix issue with obtaining the value of SQLPlus placeholders on Oracle 26ai</li>
+            <li>fixed an issue with using the create-database provisioner where a reprovision operation would not fully occur if no additional provisioner configuration was specified</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.45.1.2021 to 1.45.1.2083</li>
+            <li>Upgraded sqlfluff from 3.4.2 to 3.5.0</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.17.2">Flyway 11.17.2 (2025-11-24)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where the bundled SqlFluff was not included with some versions of the CLI</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.17.1">Flyway 11.17.1 (2025-11-20)</h2>
+
+        <h3>Known Issues</h3>
+        <ul>
+            <li>Redgate bundled SQLFluff was not shipped in this release due to a packaging problem</li>
+        </ul>
+        
+        <h3>New features</h3>
+        <ul>
+            <li>Added ability to run code analysis on individiual scripts with 'check.scriptFilename' and new 'SCRIPT' scope</li>
+            <li>Snapshot history version column will now be populated when a database is used as the source for the snapshot</li>
+            <li>Comparison options can now be configured via the command-line</li>
+            <li>testConnection command can test Comparison Engine connections</li>
+            <li>snapshots can be written to an s3 bucket and read from an s3 bucket when performing drift checks</li>
+            <li>Flyway now supports reporting the usage of '--noqa' tags that suppress code analysis linting</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed missing descriptions for SQLFluff rules RG07, RG08, RG11, and RG12</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4172">Issue 4172</a>
+                Fix getting Oracle metadata properties
+            </li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4169">Issue 4169</a>
+                Fixes an additional connection being created when running migrate or undo
+            </li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.45.1.1851 to 1.45.1.2021</li>
+        </ul>
+
+        <p>
+            Thanks to toadzky and MahogaWeerasinghe for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.17.0">Flyway 11.17.0 (2025-11-11)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>It is now possible to capture and store snapshots in a target database in a flyway snapshot history table following a migrate, undo, or deploy action. These snapshots can be used for drift analysis and potentially for rollback. For more information see <a href="https://documentation.red-gate.com/flyway/flyway-concepts/snapshots">snapshots</a>.</li>
+            <li>standard logging is now included with `outputType=json`; it is posted via STDERR</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>if deployed snapshot is configured but not found, drift detection will warn rather than fail, allowing for initial deployment to succeed</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed issue where namespace short-circuiting would not work when environment parameters were set</li>
+            <li>Test connection will only output success if it is successful</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.45.1.1821 to 1.45.1.1851</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.16.0">Flyway 11.16.0 (2025-11-06)</h2>
+        
+        <h3>Known Issues</h3>
+        <ul>
+            <li>Redgate bundled SQLFluff was not shipped in this release due to a packaging problem</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Regex code analysis now reports all identified violations instead of only the first one</li>
+            <li>Added a new 'testConnection' command to test the validity of a configured database connection</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Flyway now uses the packaged SQLFluff for Enterprise users by default, unless this feature is explicitly turned off</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Updated latest version of SQL Server to 2025</li>
+            <li>Oracle now respects the encoding configuration parameter when reading SQL migrations.</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Resolve issue causing output progress only being set when the user is set.</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.44.0.1673 to 1.45.1.1821</li>
+            <li>Upgrade mssql-jdbc to 12.10.2</li>
+            <li>Upgrade Couchbase SDK to 3.9.2</li>
+            <li>Upgrade Databricks JDBC to 3.0.1</li>
+            <li>Upgraded Netty to 4.2.7</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.15.0">Flyway 11.15.0 (2025-10-23)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now provides clearer error messages when online authentication methods fail</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Simplified setting `debugMode` and `quietMode` in Loggers. When using Flyway via the Java API, Log level is now configured via `LogFactory.setLogLevel(LogLevel)`. All appropriate loggers will now honor the LogLevel including `quietMode` (most loggers were previously flawed and would ignore this)</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.44.0.1656 to 1.44.0.1673</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.14.1">Flyway 11.14.1 (2025-10-15)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now supports configuring Offline Permits via command-line parameters and TOML configuration</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Released first set of <a href="https://documentation.red-gate.com/fd/redgate-sqlfluff-rules-library-317489950.html">Redgate code analysis rules for SQLFLuff</a> (RG01-RG08)</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4129">Issue 4129</a>
+                Update Snowflake driver to 3.27.0
+            </li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4135">Issue 4135</a>
+                Improved redaction of passwords in JDBC connection strings
+            </li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4151">Issue 4151</a>
+                No longer crash when calling ClassUtils.getInstallDir if jars located at root of filesystem
+            </li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.44.0.1580 to 1.44.0.1656</li>
+        </ul>
+
+        <p>
+            Thanks to mendhak, crammond, calou and mmitch for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.14.0">Flyway 11.14.0 (2025-10-09)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Packaged SQL Fluff added to docker images</li>
+            <li>Enhanced exception handling during Code Analysis to allow Flyway to continue generating the Report if partial results are already available</li>
+            <li>Flyway now provides more comprehensive details in code analysis results</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4155">Issue 4155</a>
+                Schema history index is now created in a specified tablespace for Oracle and DB2
+            </li>
+            <li>stop detecting schema model folder as a SQL server schema model when it was empty but had empty sub folders</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>S3ClientFactory has moved to the flyway-locations-s3 module</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.44.0.1569 to 1.44.0.1580</li>
+        </ul>
+
+        <p>
+            Thanks to acarstensen for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.13.3">Flyway 11.13.3 (2025-10-07)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>JVM Startup time added to verbose logs</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4119">Issue 4119</a>
+                Update shaded aws-secretsmanager-jdbc to not include io.netty to remove vulnerable dependencies
+            </li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.43.0.1498 to 1.44.0.1569</li>
+        </ul>
+
+        <p>
+            Thanks to numeraltwo for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.13.2">Flyway 11.13.2 (2025-09-26)</h2>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Deprecated constructor on Location class. Use new static factory method instread.</li>
+            <li>it is now possible to implement locations via plugins</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.42.2.1345 to 1.43.0.1498</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.13.1">Flyway 11.13.1 (2025-09-17)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Flyway now provides clearer error messages when attempting to load an unlicensed plugin</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.13.0">Flyway 11.13.0 (2025-09-16)</h2>
+        <h3>Due to issues in the release process, this version has been skipped</h3>
+
+        <h3>New features</h3>
+        <ul>
+            <li>It is now possible to define `beforeDeploy`, `afterDeploy`, and `afterDeployError` callbacks in locations specified by the `callbackLocations` parameter. This allows logic to be executed before and after script execution for state-based deployments.</li>
+            <li>deploy command now supports errorOverrides, allowing for graceful handling of SQL Server PRINT statements</li>
+            <li>it is now possible to specify callback-specific locations using the `callbackLocations` parameter</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Couchbase foundational support is now in preview</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Exceptions using batch will now display the line number of the offending SQL causing the error</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>The `Callback` interface now extends a generic interface. The compile-time signature is unchanged.</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.41.0.1246 to 1.42.2.1345</li>
+            <li>Bump netty-common-http to 4.1.125 to fix CVE-2025-58057</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.12.0">Flyway 11.12.0 (2025-09-04)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>A new 'failOnError' mode has been introduced in Flyway 'check' code analysis</li>
+			<li>add support to generate undo script for state based model migration</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>'majorRules' and 'minorRules' parameters in Code Analysis are now deprecated</li>
+        </ul>
+		
+		<h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where fetching the list of static data tables may fail when using Azure AD interactive authentication</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.40.0.1194 to 1.41.0.1246</li>
+        </ul>
+
+  </div>
+  
+  <div class="release">
+        <h2 id="11.11.2">Flyway 11.11.2 (2025-08-21)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>afterConnect callback is now available outside of Native Connectors</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Fixed jar for aws-secretsmanager</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.39.4.1185 to 1.40.1.1194</li>
+            <li>Bump Netty-common, netty-resolver and netty-codec-http2 to 4.1.124 to fix CVE-2025-55163</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.11.1">Flyway 11.11.1 (2025-08-14)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Table of useful configuration options will now print if no migrations found</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>When performing operations using the results of database comparison capabilities (model, generate, prepare, diffText) for SQL Server and Oracle databases, selecting static data differences will fail if the associated table does not exist in the target database and is not also included for selection</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.39.0.1098 to 1.39.4.1185</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.11.0">Flyway 11.11.0 (2025-08-08)</h2>
+
+        <h3>Breaking changes</h3>
+        <ul>
+            <li>Removed flywayTelemetryManager from CommandExtension API signature</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Update community dbs to 10.24.0</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>MongoDB Native Connectors now handles the case where no authentication is explicitly specified gracefully</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.38.0.1077 to 1.39.0.1098</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.10.5">Flyway 11.10.5 (2025-07-31)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>New configuration option that allows a WHERE clause to be specified for comparison operations on each static data table to filter the returned rows</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Added full aws-secretsmanager-jdbc dependencies</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.38.0.1042 to 1.38.0.1077</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.10.4">Flyway 11.10.4 (2025-07-24)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Oracle Database Flashback support for Native Connectors Oracle</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>'passOnRegexMatch' parameter in Regex Code Analysis is now deprecated</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Added community db IRIS</li>
+            <li>Added community db QuestDB</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.38.0.974 to 1.38.0.1042</li>
+            <li>Upgraded sqlfluff from 3.4.1 to 3.4.2</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.10.3">Flyway 11.10.3 (2025-07-17)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Code analysis reports now display both the number of files with violations and the total number of violations</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4089">Issue 4089</a>
+                Gradle plugin now uses Extensions API over deprecated Conventions API
+            </li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.37.0.926 to 1.38.0.974</li>
+            <li>org.apache.commons:commons-lang3 to 3.18.0</li>
+            <li>Upgraded Jackson from 2.15.2 to 2.19.1</li>
+        </ul>
+
+        <p>
+            Thanks to mokamoto12 for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.10.2">Flyway 11.10.2 (2025-07-10)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>A new parameter has been added to Regex Rule configuration files, allowing individual Regex Rules to be selectively disabled</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Fabric Data Warehouse is now available in Preview</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where baseline scripts were not included during check -changes and check -drift</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.36.0.820 to 1.37.0.926</li>
+            <li>mssql-jdbc 12.6.3 -> 12.10.1</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.10.1">Flyway 11.10.1 (2025-07-03)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>The 'help' command now provides targeted help for individual 'check' sub-commands</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Update terminology in docs from AAD to Microsoft Entra</li>
+            <li>New SQL Server projects will now surface 'PRINT' statements as info logs instead of warnings with a default error override in the project settings</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where the 'shouldExecute' configuration was ignored by Flyway during Callbacks execution in Native Connectors mode</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.10.0">Flyway 11.10.0 (2025-06-26)</h2>
+
+        <h3>Breaking changes</h3>
+        <ul>
+            <li>error output is now a record and supports custom payloads for different exception types</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Backup provisioner will no longer attempt to create users that already exist</li>
+            <li>It is now possible to set `generate.usePlaceholders=true` to allow the `generate` verb to place placeholders into generated files</li>
+            <li>Flyway now supports specifying the code analysis scope for migrations</li>
+            <li>Flyway now supports configuring the SQL dialect for code analysis via a dedicated configuration parameter</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Native Connectors is now available via the API</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4092">Issue 4092</a>
+                Gradle tasks now use lazy instantiation
+            </li>
+            <li>flyway prepare target parameter will now default to the value of the environment parameter if the source is schema model or migrations. This makes it more straightforward if the connection details are provided as parameters rather than as a toml environment, and makes the command neater if prepare and deploy are chained together.</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Deleted migrations and baseline markers are now ignored when running check -drift and check -changes</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded OJDBC 11 from 21.1.0.0 to 21.18.0.0</li>
+        </ul>
+
+        <p>
+            Thanks to mokamoto12 for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.9.2">Flyway 11.9.2 (2025-06-19)</h2>
+
+        <h3>New features</h3>
+        <ul>
+            <li>The snapshot command now creates any missing parent directories for the provided snapshot file path</li>
+            <li>MongoDB Native Connectors now supports outputQueryResults for Javascript migrations</li>
+            <li>Flyway code analysis now reports analyzed files more accurately</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Deprecated MongoDB using legacy JDBC driver. Please make sure Mongosh is installed to use Native Connectors</li>
+            <li>improved error message information for script migration errors</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Fabric SQL Database support added for foundational capabilities</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where Flyway would throw an error during code analysis if no specific connection URL was provided</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.33.6.583 to 1.34.8.647</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.9.1">Flyway 11.9.1 (2025-06-05)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>SQLFluff Code Analysis will now show the line number and position of a violation</li>
+            <li>suppressed incorrect warning about transactions appearing when running `prepare`</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.33.6.573 to 1.33.6.583</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.9.0">Flyway 11.9.0 (2025-06-02)</h2>
+
+        <h3>Breaking changes</h3>
+        <ul>
+            <li>OSS command-line artifacts will now be downloaded from the release tag on GitHub instead of Maven</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now allows enabling or disabling Code Analysis Rules Engines via configuration</li>
+            <li>diffText console output will use the unified diff format when -color=never is set or color support has not been detected.</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>difference IDs are now included in diffText console output.</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where the MongoDB connection string's 'defaultauthdb' configuration was not being correctly applied</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.33.3.433 to 1.33.6.573</li>
+            <li>Databricks JDBC driver 2.7.1 -> 2.7.3</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.8.3">Flyway 11.8.3 (2025-05-20)</h2>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Add cubrid community database</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.32.0.269 to 1.33.3.408</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.8.2">Flyway 11.8.2 (2025-05-13)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Jackson-databind is now a dependency of flyway-core</li>
+            <li>Fixed a bug where SQLFluff code analysis reported files with violations even when the violation count was zero</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4074">Issue 4074</a>
+                MongoDB Native Connectors now throws when there is a writeError
+            </li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>NC Mongo now uses temporary files to remove issues with `"` characters in migrations</li>
+            <li>Support Create table inside IF THEN block for BigQuery</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Reports will now display the environments used by Flyway</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.30.3.102 to 1.32.0.254</li>
+        </ul>
+
+        <p>
+            Thanks to marcust for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.8.1">Flyway 11.8.1 (2025-05-06)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4068">Issue 4068</a>
+                Snowflake will not set a role after a migration if the current role is the same as the original role before a migration
+            </li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4046">Issue 4046</a>
+                Make jackson libraries optional on flyway-core. JSON and TOML features will require these libraries
+            </li>
+            <li>added Oracle debug information to documentation</li>
+            <li>Flyway now throws error if PAT is set in OSS edition</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.30.2.26414 to 1.30.3.102</li>
+        </ul>
+
+        <p>
+            Thanks to trainman and axelfontaine for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.8.0">Flyway 11.8.0 (2025-04-24)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where the TLS auto-configuration failed to recognize a supported object type in the client PEM file</li>
+            <li>flyway will raise an error if a provisioner is requested to be used when dry run is set</li>
+            <li>The PostgreSQL parser now supports CASE statements within a BEGIN ATOMIC statement</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Deprecate detectUserByUrl and detectPasswordByUrl methods from the DatabaseType API</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4055">Issue 4055</a>
+                Add support for `STREAMLIT` objects to Snowflake parser
+            </li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Native Connectors now supports the afterConnect callback. This will function similarly to initSql which this will be replacing</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.30.2.26351 to 1.30.2.26414</li>
+            <li>Upgraded sqlfluff from 3.3.1 to 3.4.0</li>
+        </ul>
+
+        <p>
+            Thanks to andreir229 for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+        <h2 id="11.7.2">Flyway 11.7.2 (2025-04-17)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>MongoDB Native Connectors can now use the database from the url instead of the default `test` database</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+          <li><a href="https://github.com/flyway/flyway/issues/4033">Issue 4033:</a> Add support for the AWS Wrapper with PostgreSQL</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.30.2.26299 to 1.30.2.26351</li>
+            <li>Update databricks-jdbc to 2.7.1</li>
+            <li>Update jetty-server to 9.4.57.v20241219 to fix CVE-2024-6763</li>
+        </ul>
+
+        <p>
+            Thanks to heikkis, swarna7602, lambdaupb, and oimo23 for reporting these issues.
+        </p>
+  </div>
+
+  <div class="release">
+    <h2 id="11.7.1">Flyway 11.7.1 (2025-04-14)</h2>
+
+    <h3>Changes</h3>
+    <ul>
+      <li>Native Connectors for Oracle now supports clean</li>
+      <li>Added new error code `FAILED_BASELINE_MIGRATION` to convey failure when migration a baseline</li>
+    </ul>
+
+    <h3>Library upgrades</h3>
+    <ul>
+      <li>Upgraded RgCompare.Cli from 1.30.2.26158 to 1.30.2.26299</li>
+      <li>Upgraded azure-identity 1.14.2 -> 1.15.4</li>
+      <li>Upgraded msal4j 1.15.1 -> 1.20.0</li>
+    </ul>
+
+  </div>
+
+  <div class="release">
+    <h2 id="11.7.0">Flyway 11.7.0 (2025-04-09)</h2>
+
+    <h3>New features</h3>
+    <ul>
+      <li>Flyway now supports Native Connectors mode for Oracle Database</li>
+    </ul>
+
+    <h3>Bug fixes</h3>
+    <ul>
+      <li>Fixed an issue where diff comparisons of empty schema models to empty would use the SqlServer comparison engine</li>
+      <li>Fixed an issue where the MongoDB connection string's 'authSource' parameter was not being correctly applied</li>
+      <li>Fixed an issue where performing a dry run on non-Native Connectors databases triggered a misleading Native Connector warning message</li>
+    </ul>
+
+    <h3>Library upgrades</h3>
+    <ul>
+      <li>Upgraded RgCompare.Cli from 1.30.2.26104 to 1.30.2.26158</li>
+    </ul>
+
+  </div>
+
+  <div class="release">
+    <h2 id="11.6.0">Flyway 11.6.0 (2025-04-03)</h2>
+
+    <h3>Changes</h3>
+    <ul>
+      <li>The shape of the JSON object during an error has changed to include 'sqlState' and 'sqlErrorCode' for conveying the SQL state and error code from a database-level exception</li>
+    </ul>
+
+    <h3>Library upgrades</h3>
+    <ul>
+      <li>Upgraded RgCompare.Cli from 1.30.1.26056 to 1.30.2.26104</li>
+    </ul>
+
+  </div>
+  
+  <div class="release">
+        <h2 id="11.5.0">Flyway 11.5.0 (2025-03-26)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>If Mongosh is available, Flyway Redgate Edition will default to using the Native Connectors Mode for MongoDB</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.30.0.26008 to 1.30.1.26056</li>
+        </ul>
+
+  </div>
+
+  <div class="release">
+        <h2 id="11.4.1">Flyway 11.4.1 (2025-03-21)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Rule and configuration TOML files now support a BOM character at the start of the file</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Added support for change reports to projects deploying from a Schema model. This can be enabled by setting '-check.changesSource=schemaModel' when running 'check -changes'</li>
+            <li>(preview) add support for migration tags. Tags can be used to cherry pick groups of migrations.</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Update Snowflake to 3.23.1 to fix CVE-2025-27496</li>
+        </ul>
+
+        <h3>Library upgrades</h3>
+        <ul>
+            <li>Upgraded RgCompare.Cli from 1.29.0.25860 to 1.30.0.25967</li>
+        </ul>
+
+  </div>
+
+
+  <div class="release">
+        <h2 id="11.4.0">Flyway 11.4.0 (2025-03-12)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where Flyway would fail to fall back to 'flywayDesktop.schemaModel' during 'diff'</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4039">Issue 4039</a>
+                Fix OpenTelemetry dependencies not being shipped with GCP Spanner in open source
+            </li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Renamed error codes returned for database comparison errors</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4039">Issue 4039</a>
+                Update OpenTelemetry dependencies to 1.42.1
+            </li>
+        </ul>
+
+        <p>
+            Thanks to tomwinget for reporting these issues.
+        </p>
+    </div>
+
+<div class="release">
+        <h2 id="11.3.4">Flyway 11.3.4 (2025-02-27)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue where Flyway incorrectly examined an unused permit on disk and gave a misleading warning message</li>
+            <li>fixed an issue where check filterFile was not being used for check actions</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>shouldExecute expressions are validated before being evaluated</li>
+        </ul>
+
+    </div>
+
+<div class="release">
+        <h2 id="11.3.3">Flyway 11.3.3 (2025-02-19)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed missing Oracle Wallet dependencies after upgrading to ojdbc11</li>
+            <li>fixed an issue where clean, backup and snapshot provisioners would not use configured properties from the flyway namespace. This fixes an issue where script callbacks would not be called for the subset of flyway operations directly caused by these provisioners running.</li>
+            <li>Fixes issue where specifying an empty cherry pick list to the diff build database property would be treated as if cherry pick was not specified. This fixes an issue seen in the check reports when deploying to an empty target for the first time.</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Nested resolver definitions are disallowed and will result in an error</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway Enterprise now automatically configures 'javax.net.ssl.keyStore' and 'javax.net.ssl.trustStore' for MongoDB TLS connections in Native Connectors mode</li>
+            <li>Added user defined placeholder resolver</li>
+        </ul>
+
+    </div>
+
+<div class="release">
+        <h2 id="11.3.2">Flyway 11.3.2 (2025-02-14)</h2>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>Fixed an issue with the reports where previous reports before the current report displayed invalid results</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/3771">Issue 3771</a>
+                Fixed an issue where the Flyway 'configuration' API returned Configuration objects with shared references instead of deep copies
+            </li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>The `deploy` command will now succeed with a warning if the deployment script does not exist, allowing for smoother chaining with the `prepare` command.</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>CosmosDB added</li>
+            <li>AWS DocumentDB added</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Native Connectors now supports transactions for MongoDB with `.json` migrations</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Update Cassandra JDBC Wrapper to 4.13</li>
+            <li>Update AWS S3 SDK to 2.30.18</li>
+            <li>Update Netty Common and Netty Handler to 4.1.118.Final to fix CVE-2025-25193 and CVE-2025-24970</li>
+        </ul>
+
+        <p>
+            Thanks to KarolRoman for reporting these issues.
+        </p>
+    </div>
+
+<div class="release">
+        <h2 id="11.3.1">Flyway 11.3.1 (2025-02-04)</h2>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Upgrade snowflake-jdbc 3.20.0 to 3.22.0 to fix CVE-2025-24790</li>
+        </ul>
+
+    </div>
+
+<div class="release">
+        <h2 id="11.3.0">Flyway 11.3.0 (2025-01-30)</h2>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>Converted FlywayTelemetryManager to use the plugin interface</li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Add Community DB Support for Timeplus and DuckDB</li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>Flyway now supports certain Callbacks with Native Connectors</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Updated the ojdbc8 driver to ojdbc11 21.1</li>
+        </ul>
+
+    </div>
+
+<div class="release">
+        <h2 id="11.2.0">Flyway 11.2.0 (2025-01-16)</h2>
+
+        <h3>Breaking changes</h3>
+        <ul>
+            <li>Removed ARM V7 support from docker images</li>
+        </ul>
+
+        <h3>Bug fixes</h3>
+        <ul>
+            <li>check changes will not require a target url/environment when provided with snapshots</li>
+            <li>Converting .conf files to toml using `flyway init` now preserves conf defaults</li>
+            <li>Fixed issue where converting a .conf file to toml in place via `flyway init` might not rename the original .conf file to .conf.bak</li>
+            <li>Native connectors respects set schema for Mongodb using Mongosh</li>
+            <li>Fixed an issue where callbacks were incorrectly loaded as migrations when Native Connectors mode was enabled</li>
+            <li>check no longer fails for SQLServer with the error: "Database passed into LiveSQLProvider needs to have DbConnectionInstructions"</li>
+        </ul>
+
+        <h3>Changes</h3>
+        <ul>
+            <li>check changes will now prefer using a given deployment snapshot over the live environment. In cases where drift appears in the live environment, this will mean that drift will now be excluded from the change report when possible.</li>
+            <li>the default filter file created upon SqlServer project initialization now ignores certificates</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4010">Issue 4010</a>
+                Snowflake now supports `COMMENT IF EXISTS`
+            </li>
+        </ul>
+
+        <h3>Database compatibility</h3>
+        <ul>
+            <li>Update databricks to 10.16.4</li>
+            <li>
+                <a href="https://github.com/flyway/flyway/issues/4005">Issue 4005</a>
+                Update Databricks JDBC driver to 2.6.40
+            </li>
+        </ul>
+
+        <h3>New features</h3>
+        <ul>
+            <li>placeholders support in Native Connectors</li>
+            <li>Include ARM 64 in the Alpine docker image</li>
+        </ul>
+
+        <h3>Java compatibility</h3>
+        <ul>
+            <li>Updated Java version shipped with Docker and CLI to 21</li>
+        </ul>
+
+        <p>
+            Thanks to nicolashenry and mlorek for reporting these issues.
+        </p>
+    </div>
+
+<div class="release">
         <h2 id="11.1.1">Flyway 11.1.1 (2025-01-07)</h2>
 
         <h3>Bug fixes</h3>
@@ -3282,7 +5032,7 @@
 
         <h3>New features</h3>
         <ul>
-            <li>Introduce <a href="/documentation/tutorials/stateScripts">State Scripts</a> - a single, cumulative script that represents the state of your database after many migrations have been applied.</li>
+            <li>Introduce <a href="https://documentation.red-gate.com/fd/tutorial-generate-a-baseline-script-138346995.html">State Scripts (also known as "Baseline Migrations")</a> - a single, cumulative script that represents the state of your database after many migrations have been applied.</li>
         </ul>
 
         <p>
@@ -4846,14 +6596,13 @@
             <li>
                 <a href="https://github.com/flyway/flyway/issues/2466" target="_blank">Issue 2466</a>
                 Support for several older databases moved into Enterprise
-
+                <ul>
+                    <li>HSQLDB 2.3 (2010)</li>
+                    <li>PostgreSQL 9.4 (2014)</li>
+                    <li>Sybase ASE 16.0 (2014)</li>
+                    <li>Sybase ASE 16.1 (2015)</li>
+                </ul>
             </li>
-            <ul>
-                <li>HSQLDB 2.3 (2010)</li>
-                <li>PostgreSQL 9.4 (2014)</li>
-                <li>Sybase ASE 16.0 (2014)</li>
-                <li>Sybase ASE 16.1 (2015)</li>
-            </ul>
         </ul>
 
         <h3>Docker images</h3>

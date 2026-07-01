@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-commandline
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package org.flywaydb.commandline.logging.console;
 
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.api.logging.Log;
+import org.flywaydb.core.api.logging.LogFactory;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Color;
 import org.fusesource.jansi.AnsiConsole;
@@ -40,25 +41,24 @@ public class ColorizedConsoleLog implements Log {
     }
 
     @Override
-    public boolean isDebugEnabled() {
-        return this.log.isDebugEnabled();
-    }
-
-    @Override
     public void debug(String message) {
-        colorizeBright(System.out, Color.BLACK);
-        this.log.debug(message);
-        reset(System.out);
+        if (LogFactory.isDebugEnabled()) {
+            colorizeBright(System.out, Color.BLACK);
+            this.log.debug(message);
+            reset(System.out);
+        }
     }
 
     @Override
     public void info(String message) {
-        if (message.startsWith("Successfully")) {
-            colorize(System.out, Color.GREEN);
-            this.log.info(message);
-            reset(System.out);
-        } else {
-            this.log.info(message);
+        if (!LogFactory.isQuietMode()) {
+            if (message.startsWith("Successfully")) {
+                colorize(System.out, Color.GREEN);
+                this.log.info(message);
+                reset(System.out);
+            } else {
+                this.log.info(message);
+            }
         }
     }
 

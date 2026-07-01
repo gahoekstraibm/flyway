@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,17 +31,6 @@ import java.util.List;
 public class MultiLogger implements Log {
 
     private final List<Log> logs;
-
-    @Override
-    public boolean isDebugEnabled() {
-        for (Log log : logs) {
-            if (!log.isDebugEnabled()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     @Override
     public void debug(String message) {

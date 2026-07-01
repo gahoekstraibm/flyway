@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-postgresql
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class PostgreSQLDatabase extends Database<PostgreSQLConnection> {
 
         ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("10", Tier.PREMIUM, configuration);
 
-        recommendFlywayUpgradeIfNecessaryForMajorVersion("17");
+        recommendFlywayUpgradeIfNecessaryForMajorVersion("18");
     }
 
     @Override
@@ -112,7 +112,7 @@ public class PostgreSQLDatabase extends Database<PostgreSQLConnection> {
 
     @Override
     public boolean useSingleConnection() {
-        PostgreSQLConfigurationExtension configurationExtension = configuration.getPluginRegister().getPlugin(PostgreSQLConfigurationExtension.class);
+        PostgreSQLConfigurationExtension configurationExtension = configuration.getPluginRegister().getExact(PostgreSQLConfigurationExtension.class);
         return !configurationExtension.isTransactionalLock();
     }
 

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-commandline
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 package org.flywaydb.commandline.logging.file;
 
 import lombok.RequiredArgsConstructor;
-import org.flywaydb.commandline.logging.console.ConsoleLog.Level;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.logging.Log;
 
@@ -30,28 +29,23 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import org.flywaydb.core.api.logging.LogFactory;
 
 @RequiredArgsConstructor
 public class FileLog implements Log {
 
     private final Path path;
-    private final Level level;
-
-    @Override
-    public boolean isDebugEnabled() {
-        return level == Level.DEBUG;
-    }
 
     @Override
     public void debug(String message) {
-        if (isDebugEnabled()) {
+        if (LogFactory.isDebugEnabled()) {
             writeLogMessage("DEBUG", message);
         }
     }
 
     @Override
     public void info(String message) {
-        if (level.compareTo(Level.INFO) <= 0) {
+        if (!LogFactory.isQuietMode()) {
             writeLogMessage(message);
         }
     }

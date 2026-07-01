@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,16 +55,6 @@ public class TestContainersDatabaseType extends BaseDatabaseType {
             return "com.p6spy.engine.spy.P6SpyDriver";
         }
         return "org.testcontainers.jdbc.ContainerDatabaseDriver";
-    }
-
-    @Override
-    public boolean detectUserRequiredByUrl(String url) {
-        return !url.contains("user=");
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-        return !url.contains("password=");
     }
 
     @Override

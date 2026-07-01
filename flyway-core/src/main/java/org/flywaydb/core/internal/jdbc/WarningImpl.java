@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class WarningImpl implements Warning {
     @Override
     public void setHandled(boolean handled, Configuration configuration) {
         if (!LicenseGuard.isLicensed(configuration, Tier.PREMIUM)) {
-            throw new FlywayEditionUpgradeRequiredException(Tier.TEAMS, LicenseGuard.getTier(configuration), "Warning handling");
+            throw new FlywayEditionUpgradeRequiredException(LicenseGuard.getTier(configuration), "Warning handling");
         }
 
         this.handled = handled;

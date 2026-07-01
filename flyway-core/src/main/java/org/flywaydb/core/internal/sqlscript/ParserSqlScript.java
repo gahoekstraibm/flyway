@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package org.flywaydb.core.internal.sqlscript;
 
 import lombok.CustomLog;
 import org.flywaydb.core.api.FlywayException;
+import org.flywaydb.core.api.logging.LogFactory;
 import org.flywaydb.core.api.resource.LoadableResource;
 import org.flywaydb.core.internal.parser.Parser;
 
@@ -93,18 +94,14 @@ public class ParserSqlScript implements SqlScript {
                                     + (sqlStatement.canExecuteInTransaction() ? "" : " [non-transactional]"));
                 }
 
-
-
-
-
-
-
-
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Found statement at line " + sqlStatement.getLineNumber() + ": " + sqlStatement.getSql()
-                                      + (sqlStatement.canExecuteInTransaction() ? "" : " [non-transactional]"));
+                SqlScript referencedSqlScript = sqlStatement.getReferencedSqlScript();
+                if (referencedSqlScript != null) {
+                    referencedSqlScripts.add(referencedSqlScript);
+                    referencedSqlScripts.addAll(referencedSqlScript.getReferencedSqlScripts());
                 }
+
+                LOG.debug("Found statement at line " + sqlStatement.getLineNumber() + ": " + sqlStatement.getSql()
+                                  + (sqlStatement.canExecuteInTransaction() ? "" : " [non-transactional]"));
             }
         }
         parsed = true;
@@ -207,5 +204,10 @@ public class ParserSqlScript implements SqlScript {
     @Override
     public int compareTo(SqlScript o) {
         return resource.getRelativePath().compareTo(o.getResource().getRelativePath());
+    }
+
+    @Override
+    public boolean includeReferencedScriptsInChecksum() {
+        return parser.includeReferencedScriptsInChecksum();
     }
 }

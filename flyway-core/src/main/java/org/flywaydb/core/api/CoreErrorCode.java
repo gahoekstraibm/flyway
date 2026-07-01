@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
  */
 package org.flywaydb.core.api;
 
+import lombok.Getter;
+
 public enum CoreErrorCode implements ErrorCode {
     // general error codes
     FAULT,
@@ -26,6 +28,7 @@ public enum CoreErrorCode implements ErrorCode {
     JDBC_DRIVER,
     DB_CONNECTION,
     CONFIGURATION,
+    CONFIGURATION_RECOVERABLE,
     DUPLICATE_VERSIONED_MIGRATION,
     DUPLICATE_REPEATABLE_MIGRATION,
     DUPLICATE_UNDO_MIGRATION,
@@ -35,6 +38,7 @@ public enum CoreErrorCode implements ErrorCode {
     // validate error codes
     VALIDATE_ERROR,
     SCHEMA_DOES_NOT_EXIST,
+    FAILED_BASELINE_MIGRATION,
     FAILED_REPEATABLE_MIGRATION,
     FAILED_VERSIONED_MIGRATION,
     APPLIED_REPEATABLE_MIGRATION_NOT_RESOLVED,
@@ -47,4 +51,7 @@ public enum CoreErrorCode implements ErrorCode {
     DESCRIPTION_MISMATCH,
     ENVIRONMENT_RESOLVE,
     ENVIRONMENT_PROVISION;
+
+    @Getter
+    private final int exitCode = 1;
 }

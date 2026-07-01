@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-snowflake
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 
 @CustomLog
 public class SnowflakeDatabase extends Database<SnowflakeConnection> {
@@ -79,7 +80,7 @@ public class SnowflakeDatabase extends Database<SnowflakeConnection> {
 
         ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("3", Tier.PREMIUM, configuration);
 
-        recommendFlywayUpgradeIfNecessaryForMajorVersion("8.3");
+        checkDatabaseVersionUntested(10);
     }
 
     @Override
@@ -170,5 +171,18 @@ public class SnowflakeDatabase extends Database<SnowflakeConnection> {
         } else {
             return DATABASE_HOSTING_AWS_SNOWFLAKE;
         }
+    }
+
+    private void checkDatabaseVersionUntested(final int newestSupportedVersion) {
+        if (getVersion().getMajor().intValue() > (newestSupportedVersion)) {
+            informVersionUntested(newestSupportedVersion);
+        }
+    }
+
+    private void informVersionUntested(final int newestSupportedVersion) {
+        final String message = databaseType + " " + computeVersionDisplayName(getVersion())
+            + " is newer than the latest major version tested with this version of Flyway: Snowflake " + newestSupportedVersion + ".x ."
+            + "\nCheck here: " + FlywayDbWebsiteLinks.SNOWFLAKE + " to see if your version is supported in the latest Flyway release";
+        LOG.info(message);
     }
 }

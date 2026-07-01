@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@
  */
 package org.flywaydb.core.internal.configuration.resolvers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -64,11 +65,9 @@ public class EnvironmentResolver {
             resolverConfigs);
 
         final ResolvedEnvironment result = new ResolvedEnvironment();
-        result.setDriver(environment.getDriver());
         result.setConnectRetries(environment.getConnectRetries());
         result.setConnectRetriesInterval(environment.getConnectRetriesInterval());
         result.setInitSql(environment.getInitSql());
-        result.setSchemas(environment.getSchemas());
 
         progress.pushSteps(2);
         final ProgressLogger provisionProgress = progress.subTask("provision");
@@ -95,6 +94,10 @@ public class EnvironmentResolver {
         result.setPassword(context.resolveValue(environment.getPassword(), resolveProgress));
         result.setUser(context.resolveValue(environment.getUser(), resolveProgress));
         result.setUrl(context.resolveValue(environment.getUrl(), resolveProgress));
+        result.setDriver(context.resolveValue(environment.getDriver(), resolveProgress));
+        result.setSchemas(environment.getSchemas() != null
+            ? environment.getSchemas().stream().map(s -> context.resolveValue(s, resolveProgress)).toList()
+            : null);
         result.setProvisionerMode(mode);
 
         if (mode == ProvisionerMode.Provision) {
@@ -141,7 +144,9 @@ public class EnvironmentResolver {
         if (clazz != null) {
             try {
                 final var data = environmentModel.getResolvers().get(key);
-                return (ConfigurationExtension) new ObjectMapper().convertValue(data, clazz);
+                return (ConfigurationExtension) new ObjectMapper().rebuild()
+                    .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false).build()
+                    .convertValue(data, clazz);
             } catch (final IllegalArgumentException e) {
                 throw new FlywayException("Error reading resolver configuration for resolver " + key,
                     e,
@@ -153,12 +158,12 @@ public class EnvironmentResolver {
     }
 
     private Class<? extends Plugin> getResolverClassFromKey(final PluginRegister pluginRegister, final String key) {
-        Plugin plugin = pluginRegister.getPlugins(EnvironmentProvisioner.class).stream().filter(p -> p.getName()
-            .equalsIgnoreCase(key)).findFirst().orElse(null);
+        Plugin plugin = pluginRegister.getInstancesOf(EnvironmentProvisioner.class).stream()
+            .filter(p -> matchesNameOrAlias(p, key)).findFirst().orElse(null);
 
         if (plugin == null) {
-            plugin = pluginRegister.getPlugins(PropertyResolver.class).stream().filter(p -> p.getName()
-                .equalsIgnoreCase(key)).findFirst().orElse(null);
+            plugin = pluginRegister.getInstancesOf(PropertyResolver.class).stream()
+                .filter(p -> matchesNameOrAlias(p, key)).findFirst().orElse(null);
         }
 
         if (plugin != null) {
@@ -168,13 +173,27 @@ public class EnvironmentResolver {
         throw new FlywayException("Unable to find resolver: " + key);
     }
 
+    private boolean matchesNameOrAlias(Plugin plugin, String key) {
+        if (plugin.getName().equalsIgnoreCase(key)) {
+            return true;
+        }
+
+        if (plugin instanceof PropertyResolver) {
+            PropertyResolver resolver = (PropertyResolver) plugin;
+            return resolver.getAliases().stream()
+                .anyMatch(alias -> alias.equalsIgnoreCase(key));
+        }
+
+        return false;
+    }
+
     private Class<?> getResolverConfigClassFromKey(final PluginRegister pluginRegister, final String key) {
         final Class<? extends Plugin> resolverClass = getResolverClassFromKey(pluginRegister, key);
         if (resolverClass == null) {
             return null;
         }
 
-        final Plugin plugin = pluginRegister.getPlugin(resolverClass);
+        final Plugin plugin = pluginRegister.getExact(resolverClass);
         if (plugin instanceof final EnvironmentProvisioner environmentProvisioner) {
             return environmentProvisioner.getConfigClass();
         }

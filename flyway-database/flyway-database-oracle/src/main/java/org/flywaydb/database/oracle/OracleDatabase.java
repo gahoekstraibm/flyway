@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-oracle
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ package org.flywaydb.database.oracle;
 
 import static org.flywaydb.core.internal.database.base.DatabaseConstants.DATABASE_HOSTING_AWS_RDS;
 import static org.flywaydb.core.internal.database.base.DatabaseConstants.DATABASE_HOSTING_RDS_URL_IDENTIFIER;
+import static org.flywaydb.core.internal.util.FlywayDbWebsiteLinks.COMMUNITY_SUPPORT;
 
+import java.util.Locale;
+import lombok.CustomLog;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.extensibility.Tier;
 import org.flywaydb.core.internal.database.base.Database;
@@ -40,21 +43,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@CustomLog
 public class OracleDatabase extends Database<OracleConnection> {
-    private static final String ORACLE_NET_TNS_ADMIN = "oracle.net.tns_admin";
-
-    /**
-     * If the TNS_ADMIN environment variable is set, enable tnsnames.ora support for the Oracle JDBC driver.
-     * See http://www.orafaq.com/wiki/TNS_ADMIN
-     */
-    public static void enableTnsnamesOraSupport() {
-        String tnsAdminEnvVar = System.getenv("TNS_ADMIN");
-        String tnsAdminSysProp = System.getProperty(ORACLE_NET_TNS_ADMIN);
-        if (StringUtils.hasLength(tnsAdminEnvVar) && tnsAdminSysProp == null) {
-            System.setProperty(ORACLE_NET_TNS_ADMIN, tnsAdminEnvVar);
-        }
-    }
-
     public OracleDatabase(Configuration configuration, JdbcConnectionFactory jdbcConnectionFactory, StatementInterceptor statementInterceptor) {
         super(configuration, jdbcConnectionFactory, statementInterceptor);
     }
@@ -67,14 +57,18 @@ public class OracleDatabase extends Database<OracleConnection> {
     @Override
     public void ensureSupported(Configuration configuration) {
         ensureDatabaseIsRecentEnough("10");
+        if (!getVersion().isAtLeast("12")) {
+            LOG.info(databaseType.getName() + " " + computeVersionDisplayName(getVersion()) + " is outside of Redgate support. You may be able to find help with the Flyway community if you need it, see " + COMMUNITY_SUPPORT + " for details");
+        } else {
+            ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("18.0", Tier.PREMIUM, configuration);
+        }
 
-        ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("18.0", Tier.PREMIUM, configuration);
-
-        recommendFlywayUpgradeIfNecessaryForMajorVersion("21.3");
+        recommendFlywayUpgradeIfNecessaryForMajorVersion("23.0");
     }
 
     @Override
     public String getRawCreateScript(Table table, boolean baseline) {
+        final boolean synonymRequired = !table.getName().equals(table.getName().toUpperCase(Locale.ROOT));
         String tablespace = configuration.getTablespace() == null
                 ? ""
                 : " TABLESPACE \"" + configuration.getTablespace() + "\"";
@@ -93,7 +87,8 @@ public class OracleDatabase extends Database<OracleConnection> {
                 "    CONSTRAINT \"" + table.getName() + "_pk\" PRIMARY KEY (\"installed_rank\")\n" +
                 ")" + tablespace + ";\n" +
                 (baseline ? getBaselineStatement(table) + ";\n" : "") +
-                "CREATE INDEX \"" + table.getSchema().getName() + "\".\"" + table.getName() + "_s_idx\" ON " + table + " (\"success\");\n";
+                "CREATE INDEX \"" + table.getSchema().getName() + "\".\"" + table.getName() + "_s_idx\" ON " + table + " (\"success\") " + tablespace + ";\n" +
+                (synonymRequired ? "CREATE SYNONYM " + table.getSchema() + "." + table.getName() + " for " + table + ";\n" : "");
     }
 
     @Override

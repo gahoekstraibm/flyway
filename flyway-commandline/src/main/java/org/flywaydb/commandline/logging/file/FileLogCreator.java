@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-commandline
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class FileLogCreator implements LogCreator {
-    private final Level level;
     private final Path path;
 
     public FileLogCreator(CommandLineArguments commandLineArguments) {
@@ -42,14 +41,13 @@ public class FileLogCreator implements LogCreator {
             outputFilepath = commandLineArguments.getOutputFile();
         }
 
-        this.level = commandLineArguments.getLogLevel();
         this.path = Paths.get(outputFilepath);
 
         prepareOutputFile(path);
     }
 
     public Log createLogger(Class<?> clazz) {
-        return new FileLog(path, level);
+        return new FileLog(path);
     }
 
     private static void prepareOutputFile(Path path) {

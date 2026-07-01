@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.Configuration;
-import org.flywaydb.core.experimental.ExperimentalDatabase;
+import org.flywaydb.core.internal.nc.NativeConnectorsDatabase;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Schema;
 import org.flywaydb.core.internal.resource.ResourceName;
@@ -55,20 +55,23 @@ public class ParsingContext {
         return "flyway" + configuration.getPlaceholderSeparator() + name;
     }
     
-    public void populate(final ExperimentalDatabase database, final Configuration configuration) {
+    public void populate(final NativeConnectorsDatabase database, final Configuration configuration) {
         String defaultSchemaName = configuration.getDefaultSchema();
         final String[] schemaNames = configuration.getSchemas();
         if (defaultSchemaName == null) {
             if (schemaNames.length > 0) {
                 defaultSchemaName = schemaNames[0];
-            } 
+            }
         }
 
         if (defaultSchemaName != null) {
             placeholders.put(generateName(DEFAULT_SCHEMA_PLACEHOLDER,configuration), defaultSchemaName);
         }
 
-        // placeholders.put(generateName(DATABASE_PLACEHOLDER,configuration), null); // TODO Need to do this when we support a database engine that has Databases and Schemas
+        if (database.getDatabaseMetaData().databaseName() != null) {
+            placeholders.put(generateName(DATABASE_PLACEHOLDER,configuration), database.getDatabaseMetaData().databaseName());
+        }
+
         placeholders.put(generateName(USER_PLACEHOLDER,configuration), database.getCurrentUser());
         placeholders.put(generateName(TIMESTAMP_PLACEHOLDER,configuration), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         placeholders.put(generateName(WORKING_DIRECTORY_PLACEHOLDER,configuration), System.getProperty("user.dir"));

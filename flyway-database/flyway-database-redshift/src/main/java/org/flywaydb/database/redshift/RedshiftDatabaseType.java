@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-redshift
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 package org.flywaydb.database.redshift;
+
+import static org.flywaydb.core.internal.util.UrlUtils.isSecretManagerUrl;
 
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
@@ -57,24 +59,11 @@ public class RedshiftDatabaseType extends BaseDatabaseType {
 
     @Override
     public boolean handlesJDBCUrl(String url) {
-        if (url.startsWith("jdbc-secretsmanager:redshift:")) {
-
-
-
-
-            throw new FlywayEditionUpgradeRequiredException(Tier.ENTERPRISE, (Tier) null, "jdbc-secretsmanager");
-
-        }
-        return url.startsWith("jdbc:redshift:") || url.startsWith("jdbc:p6spy:redshift:");
+        return isSecretManagerUrl(url, "redshift") || url.startsWith("jdbc:redshift:") || url.startsWith("jdbc:p6spy:redshift:");
     }
 
     @Override
     public String getDriverClass(String url, ClassLoader classLoader) {
-
-
-
-
-
         if (url.startsWith("jdbc:p6spy:redshift:")) {
             return "com.p6spy.engine.spy.P6SpyDriver";
         }
@@ -119,16 +108,5 @@ public class RedshiftDatabaseType extends BaseDatabaseType {
     @Override
     public Parser createParser(Configuration configuration, ResourceProvider resourceProvider, ParsingContext parsingContext) {
         return new RedshiftParser(configuration, parsingContext);
-    }
-
-    @Override
-    public boolean detectPasswordRequiredByUrl(String url) {
-
-
-
-
-
-
-        return super.detectPasswordRequiredByUrl(url);
     }
 }

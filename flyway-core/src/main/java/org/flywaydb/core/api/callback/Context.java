@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ public interface Context {
     /**
      * @return The info about the statement being handled. Only relevant for the statement-level events.
      * {@code null} in all other cases.
-     * <p><i>Flyway Teams only</i></p>
      */
     Statement getStatement();
 

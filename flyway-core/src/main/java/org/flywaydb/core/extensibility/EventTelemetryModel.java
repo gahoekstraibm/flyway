@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,16 +29,20 @@ import org.flywaydb.core.FlywayTelemetryManager;
 @Setter
 public class EventTelemetryModel implements AutoCloseable {
     private String name;
+    private String id;
     private long duration;
     private Exception exception;
 
     private final FlywayTelemetryManager flywayTelemetryManager;
     private Instant startTime;
 
-    public EventTelemetryModel(String name, FlywayTelemetryManager flywayTelemetryManager) {
+    public EventTelemetryModel(final String name, final FlywayTelemetryManager flywayTelemetryManager) {
         startTime = Instant.now();
         this.flywayTelemetryManager = flywayTelemetryManager;
         this.name = name;
+        if (flywayTelemetryManager != null) {
+            this.id = flywayTelemetryManager.startEvent(this);
+        }
     }
 
     @Override

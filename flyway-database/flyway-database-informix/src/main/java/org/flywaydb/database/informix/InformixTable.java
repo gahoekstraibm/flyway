@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-database-informix
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@
  */
 package org.flywaydb.database.informix;
 
+import lombok.CustomLog;
 import org.flywaydb.core.internal.database.base.Table;
 import org.flywaydb.core.internal.jdbc.JdbcTemplate;
 
 import java.sql.SQLException;
 
-/**
- * Informix-specific table.
- */
+@CustomLog
 public class InformixTable extends Table<InformixDatabase, InformixSchema> {
     /**
      * Creates a new Informix table.
@@ -40,9 +39,40 @@ public class InformixTable extends Table<InformixDatabase, InformixSchema> {
         super(jdbcTemplate, database, schema, name);
     }
 
+    private static final int MAX_RETRIES = 10;
+    private static final int RETRY_DELAY_MS = 1000;
+
     @Override
     protected void doDrop() throws SQLException {
-        jdbcTemplate.execute("DROP TABLE " + name);
+        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                jdbcTemplate.execute("DROP TABLE " + name);
+                return;
+            } catch (SQLException e) {
+                if (attempt >= MAX_RETRIES || !isRetryableFileLockError(e)) {
+                    throw e;
+                }
+                LOG.warn("Retrying DROP TABLE " + name + " due to ISAM file lock (attempt " + (attempt + 1) + "): " + e.getMessage());
+                try {
+                    Thread.sleep(RETRY_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private static boolean isRetryableFileLockError(SQLException e) {
+        Throwable t = e;
+        while (t != null) {
+            String message = t.getMessage();
+            if (message != null && message.contains("file is locked")) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
 
     @Override

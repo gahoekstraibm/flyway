@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,11 +193,7 @@ public abstract class Parser {
                                                           " col " + statementCol + ": " + sql);
                     }
 
-                    context.setDelimiter(new Delimiter(token.getText(), false
-
-
-
-                    ));
+                    context.setDelimiter(new Delimiter(token.getText(), false, null));
                     tokens.clear();
                     recorder.start();
                     statementLine = tracker.getLine();
@@ -453,6 +449,10 @@ public abstract class Parser {
 
     public boolean supportsReferencedSqlScripts() {
         return false;
+    }
+
+    public boolean includeReferencedScriptsInChecksum() {
+        return true;
     }
 
     private Token readToken(PeekingReader reader, PositionTracker tracker, ParserContext context) throws IOException {

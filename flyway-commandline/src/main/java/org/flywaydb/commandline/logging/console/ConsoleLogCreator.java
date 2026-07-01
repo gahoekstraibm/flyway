@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-commandline
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class ConsoleLogCreator implements LogCreator {
     private final CommandLineArguments commandLineArguments;
 
     public Log createLogger(Class<?> clazz) {
-        ConsoleLog log = new ConsoleLog(commandLineArguments.getLogLevel());
+        ConsoleLog log = new ConsoleLog();
         Color color = commandLineArguments.getColor();
 
         if (Color.NEVER.equals(color) || (Color.AUTO.equals(color) && System.console() == null)) {

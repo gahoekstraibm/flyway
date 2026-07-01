@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import org.flywaydb.core.api.callback.Callback;
 import org.flywaydb.core.api.migration.JavaMigration;
 import org.flywaydb.core.api.pattern.ValidatePattern;
 import org.flywaydb.core.api.resolver.MigrationResolver;
+import org.flywaydb.core.extensibility.ConfigurationExtension;
 import org.flywaydb.core.internal.configuration.models.ConfigurationModel;
 import org.flywaydb.core.internal.configuration.models.DataSourceModel;
 import org.flywaydb.core.internal.configuration.models.ResolvedEnvironment;
 import org.flywaydb.core.internal.configuration.resolvers.ProvisionerMode;
-import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.plugin.PluginRegister;
 
 import javax.sql.DataSource;
@@ -54,6 +54,14 @@ public interface Configuration {
      * @apiNote Currently under development and not recommended for use.
      */
     PluginRegister getPluginRegister();
+
+    /**
+     * Retrieves a configuration extension.
+     *
+     * @param extensionClass the extension class
+     * @return configuration extension
+     */
+    <T extends ConfigurationExtension> T getConfigurationExtension(Class<T> extensionClass);
 
     /**
      * Get the filename of generated reports
@@ -262,6 +270,13 @@ public interface Configuration {
     String getScriptPlaceholderPrefix();
 
     /**
+     * Retrieves the PowerShell executable used for running PowerShell scripts.
+     *
+     * @return The PowerShell executable (default: "powershell" on Windows, "pwsh" on other platforms)
+     */
+    String getPowershellExecutable();
+
+    /**
      * Retrieves the map of &lt;placeholder, replacementValue&gt; to apply to sql migration scripts.
      *
      * @return The map of &lt;placeholder, replacementValue&gt; to apply to sql migration scripts.
@@ -377,6 +392,16 @@ public interface Configuration {
     Location[] getLocations();
 
     /**
+     * Retrieves the locations to scan recursively for callbacks. The location type is determined by its prefix.
+     * Unprefixed locations or locations starting with {@code classpath:} point to a package on the classpath and may
+     * contain both SQL and Java-based callbacks. Locations starting with {@code filesystem:} point to a directory on
+     * the filesystem, may only contain SQL callbacks and are only scanned recursively down non-hidden directories.
+     *
+     * @return Locations to scan recursively for callbacks.
+     */
+    Location[] getCallbackLocations();
+
+    /**
      * Whether to automatically call baseline when migrate is executed against a non-empty schema with no schema history table.
      * This schema will then be initialized with the {@code baselineVersion} before executing the migrations.
      * Only migrations above {@code baselineVersion} will then be applied.
@@ -411,7 +436,7 @@ public interface Configuration {
     /**
      * Ignore migrations that match this comma-separated list of patterns when validating migrations.
      * Each pattern is of the form <migration_type>:<migration_state>
-     * See https://documentation.red-gate.com/flyway/flyway-cli-and-api/configuration/parameters/flyway/ignore-migration-patterns for full details
+     * See https://documentation.red-gate.com/flyway/reference/configuration/flyway-namespace/flyway-ignore-migration-patterns-setting for full details
      * Example: repeatable:missing,versioned:pending,*:failed
      * (default: *:future)
      */
@@ -431,18 +456,6 @@ public interface Configuration {
      * @return {@code true} if validate should be called. {@code false} if not. (default: {@code true})
      */
     boolean isValidateOnMigrate();
-
-    /**
-     * Whether to automatically call clean or not when a validation error occurs.
-     * This is exclusively intended as a convenience for development. even though we
-     * strongly recommend not to change migration scripts once they have been checked into SCM and run, this provides a
-     * way of dealing with this case in a smooth manner. The database will be wiped clean automatically, ensuring that
-     * the next migration will bring you back to the state checked into SCM.
-     * <b>Warning! Do not enable in production!</b>
-     *
-     * @return {@code true} if clean should be called. {@code false} if not. (default: {@code false})
-     */
-    boolean isCleanOnValidationError();
 
     /**
      * Whether to disable clean.
@@ -626,12 +639,6 @@ public interface Configuration {
      * The JDBC driver of the configuration
      */
     String getDriver();
-
-    /**
-     * Get the Database type determined by the URL or Datasource
-     * If there are multiple matching DatabaseTypes for the URL, the first candidate will be returned.
-     */
-    DatabaseType getDatabaseType();
 
     /**
      *  Gets the connection environments that have already been resolved from this configuration

@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-core
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,23 @@ package org.flywaydb.core.internal.logging.apachecommons;
 
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.api.logging.Log;
+import org.flywaydb.core.api.logging.LogFactory;
 
 @RequiredArgsConstructor
 public class ApacheCommonsLog implements Log {
 
     private final org.apache.commons.logging.Log logger;
 
-    @Override
-    public boolean isDebugEnabled() {
-        return logger.isDebugEnabled();
-    }
-
     public void debug(String message) {
-        logger.debug(message);
+        if (LogFactory.isDebugEnabled()) {
+            logger.debug(message);
+        }
     }
 
     public void info(String message) {
-        logger.info(message);
+        if (!LogFactory.isQuietMode()) {
+            logger.info(message);
+        }
     }
 
     public void warn(String message) {

@@ -1,2 +1,0 @@
-org.flywaydb.verb.info.VersionOrderMigrationComparator
-org.flywaydb.verb.info.filters.ShouldExecuteMigrationInfoFilter

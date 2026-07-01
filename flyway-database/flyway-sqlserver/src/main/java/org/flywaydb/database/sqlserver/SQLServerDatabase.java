@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * flyway-sqlserver
  * ========================================================================
- * Copyright (C) 2010 - 2025 Red Gate Software Ltd
+ * Copyright (C) 2010 - 2026 Red Gate Software Ltd
  * ========================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.extensibility.CleanModePlugin;
 import org.flywaydb.core.extensibility.Tier;
-import org.flywaydb.core.internal.command.clean.CleanModeConfigurationExtension.Mode;
+import org.flywaydb.core.internal.command.clean.CleanModel.Mode;
 import org.flywaydb.core.internal.configuration.ConfigUtils;
 import org.flywaydb.core.internal.database.base.Database;
 import org.flywaydb.core.internal.database.base.Schema;
@@ -67,7 +67,7 @@ public class SQLServerDatabase extends Database<SQLServerConnection> {
 
             ensureDatabaseNotOlderThanOtherwiseRecommendUpgradeToFlywayEdition("14.0", Tier.PREMIUM, configuration);
 
-            recommendFlywayUpgradeIfNecessary("16.0");
+            recommendFlywayUpgradeIfNecessary("17.0");
         }
     }
 
@@ -278,7 +278,7 @@ public class SQLServerDatabase extends Database<SQLServerConnection> {
 
         String cleanMode = ConfigUtils.getCleanModel(configuration).getMode();
         if (Mode.ALL.name().equalsIgnoreCase(cleanMode)) {
-            CleanModePlugin cleanModePlugin = configuration.getPluginRegister().getPlugins(CleanModePlugin.class).stream()
+            CleanModePlugin cleanModePlugin = configuration.getPluginRegister().getInstancesOf(CleanModePlugin.class).stream()
                                                            .filter(p -> p.handlesMode(Mode.valueOf(cleanMode)))
                                                            .filter(p -> p.handlesDatabase(this))
                                                            .findFirst()
@@ -384,6 +384,8 @@ public class SQLServerDatabase extends Database<SQLServerConnection> {
                 return DATABASE_HOSTING_AZURE_SQL_DATABASE;
             } else if (code == 8) {
                 return DATABASE_HOSTING_AZURE_SQL_MANAGED_INSTANCE;
+            } else if (code == 12) {
+                return DATABASE_HOSTING_FABRIC;
             }
         } else if (getMainConnection().isAwsRds() || DATABASE_HOSTING_RDS_URL_IDENTIFIER.matcher(configuration.getUrl()).find()) {
             return DATABASE_HOSTING_AWS_RDS;
